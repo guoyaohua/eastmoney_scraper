@@ -1,0 +1,14 @@
+# Core dependencies
+requests>=2.25.0
+pandas>=1.2.0
+numpy>=1.19.0
+
+# Optional dependencies for development
+pytest>=6.0.0
+pytest-cov>=2.0.0
+black>=21.0.0
+flake8>=3.9.0
+
+# Optional dependencies for examples
+schedule>=1.1.0
+openpyxl>=3.0.0  # For Excel export
