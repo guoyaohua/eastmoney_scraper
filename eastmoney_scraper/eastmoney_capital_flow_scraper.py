@@ -17,7 +17,7 @@ import os
 # 配置日志
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format='%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d:%(funcName)s] - %(message)s',
     handlers=[
         logging.FileHandler('capital_flow_scraper.log'),
         logging.StreamHandler()
@@ -110,7 +110,6 @@ class DataFetcher:
             json_start = content.index('(') + 1
             json_end = content.rindex(')')
             json_data = json.loads(content[json_start:json_end])
-            print(json_data)
             return json_data
             
         except Exception as e:
