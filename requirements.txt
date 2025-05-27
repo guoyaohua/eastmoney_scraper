@@ -1,14 +1,129 @@
-# Core dependencies
-requests>=2.25.0
-pandas>=1.2.0
-numpy>=1.19.0
+# 东方财富数据爬虫包核心依赖
+# EastMoney Scraper Package Core Dependencies
 
-# Optional dependencies for development
-pytest>=6.0.0
-pytest-cov>=2.0.0
-black>=21.0.0
-flake8>=3.9.0
+# ============================================================================
+# 核心运行时依赖 (Core Runtime Dependencies)
+# ============================================================================
 
-# Optional dependencies for examples
-schedule>=1.1.0
-openpyxl>=3.0.0  # For Excel export
+# HTTP请求库 - 用于API调用和网络请求
+# HTTP request library - for API calls and network requests
+requests>=2.28.0
+
+# 数据处理和分析库 - 核心数据操作
+# Data processing and analysis library - core data operations
+pandas>=1.5.0
+
+# 数值计算库 - pandas的基础依赖
+# Numerical computing library - foundation for pandas
+numpy>=1.23.0
+
+# ============================================================================
+# 可视化依赖 (Visualization Dependencies)
+# 安装方式: pip install eastmoney-scraper[visualization]
+# Installation: pip install eastmoney-scraper[visualization]
+# ============================================================================
+
+# 基础绘图库 - 创建图表和可视化
+# Basic plotting library - create charts and visualizations
+# matplotlib>=3.5.0
+
+# 统计绘图库 - 美观的统计图表
+# Statistical plotting library - beautiful statistical charts
+# seaborn>=0.12.0
+
+# 交互式图表库 - 动态和交互式可视化
+# Interactive charting library - dynamic and interactive visualizations
+# plotly>=5.0.0
+
+# ============================================================================
+# 数据存储依赖 (Data Storage Dependencies)
+# 安装方式: pip install eastmoney-scraper[storage]
+# Installation: pip install eastmoney-scraper[storage]
+# ============================================================================
+
+# Excel文件支持 - 读写Excel文件
+# Excel file support - read and write Excel files
+# openpyxl>=3.0.0
+
+# Excel写入优化 - 高性能Excel写入
+# Excel writing optimization - high-performance Excel writing
+# xlsxwriter>=3.0.0
+
+# 数据库抽象层 - 数据库操作
+# Database abstraction layer - database operations
+# sqlalchemy>=1.4.0
+
+# ============================================================================
+# 调度和监控依赖 (Scheduling and Monitoring Dependencies)
+# 安装方式: pip install eastmoney-scraper[scheduling]
+# Installation: pip install eastmoney-scraper[scheduling]
+# ============================================================================
+
+# 简单任务调度 - 定时任务
+# Simple task scheduling - scheduled tasks
+# schedule>=1.1.0
+
+# 高级调度器 - 复杂调度需求
+# Advanced scheduler - complex scheduling needs
+# apscheduler>=3.9.0
+
+# ============================================================================
+# 开发依赖 (Development Dependencies)
+# 安装方式: pip install eastmoney-scraper[dev]
+# Installation: pip install eastmoney-scraper[dev]
+# ============================================================================
+
+# 测试框架 - 运行单元测试
+# Testing framework - run unit tests
+# pytest>=6.0.0
+
+# 测试覆盖率 - 代码覆盖率报告
+# Test coverage - code coverage reports
+# pytest-cov>=2.0.0
+
+# 代码格式化 - 统一代码风格
+# Code formatting - consistent code style
+# black>=21.0.0
+
+# 代码质量检查 - 发现代码问题
+# Code quality checking - find code issues
+# flake8>=3.9.0
+
+# 类型检查 - 静态类型分析
+# Type checking - static type analysis
+# mypy>=0.900
+
+# ============================================================================
+# 安装指南 (Installation Guide)
+# ============================================================================
+
+# 基础安装 (Basic installation):
+# pip install eastmoney-scraper
+
+# 带可视化功能 (With visualization):
+# pip install eastmoney-scraper[visualization]
+
+# 带存储功能 (With storage features):
+# pip install eastmoney-scraper[storage]
+
+# 带调度功能 (With scheduling features):
+# pip install eastmoney-scraper[scheduling]
+
+# 完整安装 (Full installation):
+# pip install eastmoney-scraper[full]
+
+# 开发环境安装 (Development installation):
+# pip install eastmoney-scraper[dev]
+
+# 从源码安装 (Install from source):
+# git clone https://github.com/guoyaohua/eastmoney-scraper.git
+# cd eastmoney-scraper
+# pip install -e .[dev]
+
+# ============================================================================
+# Python版本兼容性 (Python Version Compatibility)
+# ============================================================================
+# 支持的Python版本: 3.7+ (Supported Python versions: 3.7+)
+# 推荐Python版本: 3.9+ (Recommended Python versions: 3.9+)
+# 测试的Python版本: 3.7, 3.8, 3.9, 3.10, 3.11
+# (Tested Python versions: 3.7, 3.8, 3.9, 3.10, 3.11)

@@ -1,3 +1,11 @@
+# ============================================================================
+# EastMoney Scraper - Git Ignore File
+# ============================================================================
+
+# ============================================================================
+# Python相关 (Python Related)
+# ============================================================================
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -28,6 +36,8 @@ share/python-wheels/
 MANIFEST
 
 # PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
 
@@ -48,19 +58,67 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+.pytest/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+*.ipynb
 
 # IPython
 profile_default/
 ipython_config.py
 
 # pyenv
+#   For a library or package, you might want to ignore these files since the code is
+#   intended to run in multiple environments; otherwise, check them in:
 .python-version
+
+# pipenv
+#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
+#   However, in case of collaboration, if having platform-specific dependencies or dependencies
+#   having no cross-platform support, pipenv may install dependencies that don't work, or not
+#   install all needed dependencies.
+Pipfile.lock
+
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
 
 # Environments
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 .venv
 env/
 venv/
@@ -68,23 +126,292 @@ ENV/
 env.bak/
 venv.bak/
 
-# IDE
-.idea/
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# ============================================================================
+# IDE和编辑器 (IDEs and Editors)
+# ============================================================================
+
+# Visual Studio Code
 .vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# PyCharm
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
 *.swp
 *.swo
 *~
+.vim/
 
-# OS
-.DS_Store
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Atom
+.atom/
+
+# ============================================================================
+# 操作系统 (Operating Systems)
+# ============================================================================
+
+# Windows
 Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
 
-# Project specific
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ============================================================================
+# 项目特定数据目录 (Project Specific Data Directories)
+# ============================================================================
+
+# 数据存储目录 (Data storage directories)
 capital_flow_data/
 concept_sector_data/
 monitor_data/
-*.log
+监控数据/
+
+# 临时数据和缓存 (Temporary data and cache)
+temp_data/
+cache/
+.cache/
+
+# ============================================================================
+# 数据文件 (Data Files)
+# ============================================================================
+
+# CSV数据文件
 *.csv
+!examples/**/*.csv
+!tests/**/*.csv
+
+# Excel文件
 *.xlsx
+*.xls
+!examples/**/*.xlsx
+!tests/**/*.xlsx
+
+# JSON数据文件
 *.json
+!package.json
+!tsconfig.json
+!.eslintrc.json
+!examples/**/*.json
+!tests/**/*.json
+
+# 数据库文件
 *.db
+*.sqlite
+*.sqlite3
+!examples/**/*.db
+!tests/**/*.db
+
+# 其他数据格式
+*.parquet
+*.h5
+*.hdf5
+*.pickle
+*.pkl
+
+# ============================================================================
+# 日志文件 (Log Files)
+# ============================================================================
+
+# 日志文件
+*.log
+logs/
+log/
+*.log.*
+
+# 调试文件
+debug.txt
+debug_*.txt
+
+# ============================================================================
+# 配置和密钥 (Configuration and Keys)
+# ============================================================================
+
+# 私有配置文件
+config.ini
+config.yaml
+config.yml
+settings.ini
+.env.*
+!.env.example
+
+# API密钥和敏感信息
+api_keys.txt
+secrets.txt
+credentials.json
+.secrets/
+
+# ============================================================================
+# 备份和临时文件 (Backup and Temporary Files)
+# ============================================================================
+
+# 备份文件
+*.bak
+*.backup
+*.old
+*.orig
+*.tmp
+*_backup
+*_old
+
+# 临时文件
+temp/
+tmp/
+*.temp
+
+# ============================================================================
+# 文档生成 (Documentation Generation)
+# ============================================================================
+
+# Sphinx generated docs
+docs/_build/
+docs/_static/
+docs/_templates/
+
+# ============================================================================
+# 打包和发布 (Packaging and Release)
+# ============================================================================
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Release files
+release/
+releases/
+
+# ============================================================================
+# 性能和分析文件 (Performance and Profiling Files)
+# ============================================================================
+
+# Python profiling
+*.prof
+*.profile
+.profile
+
+# Memory profiling
+*.mprof
+
+# ============================================================================
+# 特殊说明 (Special Notes)
+# ============================================================================
+
+# 如果需要在版本控制中包含某些被忽略的文件，
+# 可以使用感叹号(!)来覆盖忽略规则
+# Example: !important_data.csv
+
+# 注意：某些示例数据文件可能需要被包含在版本控制中，
+# 请根据实际需要调整上述规则
+
+# ============================================================================
+# 项目相关工具 (Project Related Tools)
+# ============================================================================
+
+# Coverage reports
+.coverage
+htmlcov/
+
+# Tox
+.tox/
+
+# Nox
+.nox/
+
+# Pre-commit
+.pre-commit-config.yaml
+
+# Bandit security linter
+.bandit
+
+# ============================================================================
+# 忽略文件示例 (Ignore File Examples)
+# ============================================================================
+
+# 如果您有以下类型的文件，它们将被忽略：
+# - 任何以 "temp_" 开头的文件
+# - 任何 *.test 文件
+# - 任何在 "scratch/" 目录中的文件
+
+temp_*
+*.test
+scratch/
