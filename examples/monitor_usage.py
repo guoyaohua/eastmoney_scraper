@@ -392,7 +392,7 @@ def example_3_dual_monitor_coordination():
         
         current_time = datetime.now().strftime("%H:%M:%S")
         print(f"💰 [{current_time}] 个股资金流更新：{len(df_stock)} 只股票")
-        
+
         # 显示最大流入股票
         if not df_stock.empty:
             max_inflow_stock = df_stock.iloc[0]

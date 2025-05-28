@@ -117,41 +117,54 @@ class ConceptSectorConfig:
         'f14': '股票名称',      # Stock Name
     }
     
-    # 资金流向数据字段原始键名到中文名称的映射 (用于专门的资金流向接口)
-    # (Mapping from raw field keys to Chinese names for capital flow data - for dedicated capital flow API calls)
-    # 注意：部分字段与QUOTE_FIELD_MAPPING重复，但这里是针对资金流向接口的特定解析
-    # (Note: Some fields overlap with QUOTE_FIELD_MAPPING, but this is for specific parsing of capital flow API responses)
+    # 资金流向数据字段原始键名到中文名称的映射
+    # (Mapping from raw field keys to Chinese names for capital flow data)
     FLOW_FIELD_MAPPING = {
         'f12': '板块代码',          # Sector Code
         'f14': '板块名称',          # Sector Name
         'f3':  '涨跌幅',            # Percentage Change (often included for context)
+        
         # 今日 (Today)
-        'f62': '主力净流入',        # Main Force Net Inflow
-        'f184':'主力净流入占比',    # Main Force Net Inflow Percentage
-        'f66': '超大单净流入',      # Super Large Order Net Inflow
-        'f69': '大单净流入',        # Large Order Net Inflow
-        'f72': '中单净流入',        # Medium Order Net Inflow
-        'f75': '小单净流入',        # Small Order Net Inflow
-        # 5日 (5-day) - API使用不同字段代码 (API uses different field codes)
-        'f267': '5日主力净流入',
-        'f268': '5日主力净流入占比',
-        'f269': '5日超大单净流入',
-        'f270': '5日大单净流入',
-        'f271': '5日中单净流入',
-        'f272': '5日小单净流入',
+        'f62': '主力净流入',
+        'f184':'主力净流入占比',
+        'f66': '超大单净流入',
+        'f69':'超大单净流入占比',
+        'f72': '大单净流入',
+        'f75':'大单净流入占比',
+        'f78': '中单净流入',
+        'f81':'中单净流入占比',
+        'f84': '小单净流入',
+        'f87':'小单净流入占比',
+        
+        # 5日 (5-day)
+        'f164': '5日主力净流入',
+        'f165': '5日主力净流入占比',
+        'f166': '5日超大单净流入',
+        'f167': '5日超大单净流入占比',
+        'f168': '5日大单净流入',
+        'f169': '5日大单净流入占比',
+        'f170': '5日中单净流入',
+        'f171': '5日中单净流入占比',
+        'f172': '5日小单净流入',
+        'f173': '5日小单净流入占比',
+        
         # 10日 (10-day) - API使用不同字段代码 (API uses different field codes)
-        # 'f164' 在行情接口中可能是今日超大单占比，但在10日资金流向接口中可能代表10日主力净流入，需根据接口实际返回调整
-        # ('f164' might be today's super large order percentage in quote API, but could be 10-day main force net inflow in 10-day capital flow API; adjust based on actual API response)
-        # 以下为假设的10日字段，实际API可能不同，解析时需注意 (The following are assumed 10-day fields, actual API might differ, pay attention during parsing)
-        # 'fXXX': '10日主力净流入',
-        # 'fYYY': '10日主力净流入占比',
-        # ...
+        'f174': '10日主力净流入',
+        'f175': '10日主力净流入占比',
+        'f176': '10日超大单净流入',
+        'f177': '10日超大单净流入占比',
+        'f178': '10日大单净流入',
+        'f179': '10日大单净流入占比',
+        'f180': '10日中单净流入',
+        'f181': '10日中单净流入占比',
+        'f182': '10日小单净流入',
+        'f183': '10日小单净流入占比',
+
+        # 领涨股票相关字段 (Leading Stock related fields)
         'f128': '领涨股票代码',      # Leading Stock Code
         'f140': '领涨股票名称',      # Leading Stock Name
         'f136': '领涨股票涨跌幅',    # Leading Stock Percentage Change
     }
-    # 注意：东方财富的API字段 (f代码) 可能会变化，如果爬虫失效，需要检查这些映射。
-    # (Note: EastMoney's API fields (f-codes) may change. If the scraper fails, these mappings need to be checked.)
 
 class ConceptSectorFetcher:
     """
@@ -335,14 +348,10 @@ class ConceptSectorFetcher:
         try:
             # 根据不同的资金流向周期，API可能使用不同的'fid'参数进行排序或筛选
             # (API might use different 'fid' parameters for sorting or filtering based on capital flow period)
-            # 注意：这里的字段映射可能需要根据实际API行为调整
-            # (Note: Field mapping here might need adjustment based on actual API behavior)
             period_sort_field_map = {
                 'today': 'f62',    # 今日主力净流入 (Today's main force net inflow)
-                '5day': 'f267',    # 5日主力净流入 (5-day main force net inflow) - 假设的字段 (Assumed field)
-                '10day': 'f164'    # 10日主力净流入 - 假设的字段，也可能是其他 (10-day main force net inflow - assumed field, could be others)
-                                   # 东方财富API中，不同周期的资金流向字段代码可能不同，需要实际抓包确认
-                                   # (In EastMoney API, field codes for different capital flow periods might vary, need to confirm via network sniffing)
+                '5day': 'f164',    # 5日主力净流入 (5-day main force net inflow)
+                '10day': 'f174'    # 10日主力净流入 (10-day main force net inflow)
             }
             
             # 构造请求参数 (Construct request parameters)
@@ -359,7 +368,7 @@ class ConceptSectorFetcher:
                 'fs': 'm:90+t:3',  # 概念板块 (Concept sectors)
                 # 请求所有可能的资金流向相关字段，解析时再根据周期选择
                 # (Request all possible capital flow related fields, select based on period during parsing)
-                'fields': 'f12,f14,f3,f62,f184,f66,f69,f72,f75,f164,f165,f166,f167,f267,f268,f269,f270,f271,f272,f273,f274,f275,f276,f128,f140,f136'
+                'fields': ','.join(self.config.FLOW_FIELD_MAPPING.keys()) # 请求的字段列表 (List of requested fields)
             }
             
             response = self.session.get(
@@ -838,10 +847,11 @@ class ConceptSectorScraper:
         self.config = ConceptSectorConfig() # 加载配置 (Load configuration)
         self.fetcher = ConceptSectorFetcher(self.config) # 初始化数据获取器 (Initialize data fetcher)
         self.parser = ConceptSectorParser(self.config)   # 初始化数据解析器 (Initialize data parser)
-        self.output_dir = output_dir # 设置输出目录 (Set output directory)
         self.is_running = False      # 爬虫运行状态标志 (Scraper running state flag)
-        os.makedirs(self.output_dir, exist_ok=True) # 创建输出目录 (如果不存在) (Create output directory if it doesn't exist)
-    
+        if output_dir:
+            self.output_dir = output_dir # 设置输出目录 (Set output directory)
+            os.makedirs(self.output_dir, exist_ok=True) # 创建输出目录 (如果不存在) (Create output directory if it doesn't exist)
+        
     def scrape_all_data(self) -> pd.DataFrame:
         """
         爬取所有概念板块的实时行情和多周期资金流向数据，并合并成一个DataFrame。
@@ -856,9 +866,7 @@ class ConceptSectorScraper:
             logger.info("开始爬取概念板块综合数据（行情与资金流）...")
             # (Starting to scrape comprehensive concept sector data (quotes and capital flow)...)
             
-            # 1. 获取实时行情数据 (Fetch real-time quote data)
             logger.info("步骤1: 获取实时行情数据...")
-            # (Step 1: Fetching real-time quote data...)
             raw_quotes_list = self.fetcher.fetch_concept_quotes()
             df_quotes = self.parser.parse_concept_quotes(raw_quotes_list)
             
@@ -866,62 +874,6 @@ class ConceptSectorScraper:
                 logger.error("未能获取实时行情数据，操作中止。")
                 # (Failed to fetch real-time quote data, operation aborted.)
                 return pd.DataFrame()
-            
-            # # 2. 并发获取各周期资金流向数据 (Concurrently fetch capital flow data for various periods)
-            # logger.info("步骤2: 并发获取各周期资金流向数据 (今日, 5日, 10日)...")
-            # # (Step 2: Concurrently fetching capital flow data for various periods (today, 5-day, 10-day)...)
-            # with ThreadPoolExecutor(max_workers=3) as executor: # 3个周期，3个线程 (3 periods, 3 threads)
-            #     future_flow_today = executor.submit(self.fetcher.fetch_capital_flow, 'today')
-            #     future_flow_5day = executor.submit(self.fetcher.fetch_capital_flow, '5day')
-            #     future_flow_10day = executor.submit(self.fetcher.fetch_capital_flow, '10day')
-                
-            #     raw_flow_today_list = future_flow_today.result()
-            #     raw_flow_5day_list = future_flow_5day.result()
-            #     raw_flow_10day_list = future_flow_10day.result()
-            
-            # # 解析资金流向数据 (Parse capital flow data)
-            # df_flow_today = self.parser.parse_capital_flow(raw_flow_today_list, 'today')
-            # df_flow_5day = self.parser.parse_capital_flow(raw_flow_5day_list, '5day')
-            # df_flow_10day = self.parser.parse_capital_flow(raw_flow_10day_list, '10day')
-            
-            # # 3. 合并所有数据 (Merge all data)
-            # logger.info("步骤3: 合并行情与资金流数据...")
-            # # (Step 3: Merging quote and capital flow data...)
-            # df_merged = df_quotes.copy() # 从行情数据开始 (Start with quote data)
-            
-            # # 合并今日资金流向 (Merge today's capital flow)
-            # # 注意：行情数据本身可能已包含今日资金流，这里用专门的资金流接口数据进行合并或更新
-            # # (Note: Quote data itself might contain today's flow; here we merge/update with dedicated flow API data)
-            # # 为避免列名冲突，可以考虑在parse_capital_flow中对 '主力净流入' 等基础字段名前不加 '今日' 前缀
-            # # (To avoid column name conflicts, consider not adding '今日' prefix to base field names like '主力净流入' in parse_capital_flow for 'today')
-            # # 或者在合并时指定suffixes，但目前parse_capital_flow对'today'不加前缀，所以直接合并。
-            # # (Or specify suffixes during merge. Currently, parse_capital_flow adds no prefix for 'today', so direct merge is fine.)
-            # if not df_flow_today.empty:
-            #     # 选择要合并的列，避免重复板块名称等 (Select columns to merge, avoid duplicate sector names etc.)
-            #     cols_to_merge_today = [col for col in df_flow_today.columns if col not in ['板块名称']]
-            #     df_merged = pd.merge(df_merged, df_flow_today[cols_to_merge_today], on='板块代码', how='left')
-            
-            # # 合并5日资金流向 (Merge 5-day capital flow)
-            # if not df_flow_5day.empty:
-            #     cols_to_merge_5day = [col for col in df_flow_5day.columns if col not in ['板块名称']]
-            #     df_merged = pd.merge(df_merged, df_flow_5day[cols_to_merge_5day], on='板块代码', how='left')
-            
-            # # 合并10日资金流向 (Merge 10-day capital flow)
-            # if not df_flow_10day.empty:
-            #     cols_to_merge_10day = [col for col in df_flow_10day.columns if col not in ['板块名称']]
-            #     df_merged = pd.merge(df_merged, df_flow_10day[cols_to_merge_10day], on='板块代码', how='left')
-            
-            # # 添加更新时间戳 (Add update timestamp)
-            # df_merged['更新时间'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            
-            # # 按涨跌幅降序排序 (Sort by percentage change in descending order)
-            # if '涨跌幅' in df_merged.columns:
-            #     df_merged = df_merged.sort_values('涨跌幅', ascending=False).reset_index(drop=True)
-            
-            # logger.info(f"成功获取并合并 {len(df_merged)} 个概念板块的综合数据。")
-            # # (Successfully fetched and merged comprehensive data for {len(df_merged)} concept sectors.)
-            
-            # return df_merged
 
             # 添加更新时间戳 (Add update timestamp)
             df_quotes['更新时间'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -961,6 +913,11 @@ class ConceptSectorScraper:
             logger.warning("输入数据为空，不执行保存操作。")
             # (Input data is empty, skipping save operation.)
             return ""
+        if not self.output_dir:
+            logger.error("未设置输出目录，无法保存数据。")
+            # (Output directory not set, cannot save data.)
+            return ""
+
         try:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             timestamped_filename = f"{filename_prefix}_{timestamp}.csv"

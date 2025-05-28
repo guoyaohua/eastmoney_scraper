@@ -23,7 +23,7 @@ import threading
 import time
 from datetime import datetime
 import logging
-
+import os
 from .concept_sector_scraper import ConceptSectorScraper
 from .eastmoney_capital_flow_scraper import CapitalFlowScraper
 
@@ -547,13 +547,6 @@ class ConceptSectorMonitor:
                             self.callback(df)
                         except Exception as e:
                             logger.error(f"回调函数执行出错: {e}")
-                    
-                    # 保存数据到文件
-                    # (Save data to file)
-                    try:
-                        self.scraper.save_data(df)
-                    except Exception as e:
-                        logger.error(f"数据保存出错: {e}")
                 else:
                     logger.warning("获取到的概念板块数据为空")
                     
@@ -607,6 +600,7 @@ class StockCapitalFlowMonitor:
         # (Create individual stock capital flow scraper instance)
         self.scraper = CapitalFlowScraper()
         self.scraper.storage.output_dir = output_dir
+        os.makedirs(output_dir, exist_ok=True) # 创建输出目录 (如果不存在) (Create output directory if it doesn't exist)
         
         # 监控状态控制
         # (Monitor status control)
