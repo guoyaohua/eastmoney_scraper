@@ -1,25 +1,17 @@
 """
 东方财富数据爬虫包安装配置
-EastMoney Scraper Package Setup Configuration
 
 本文件配置了eastmoney_scraper包的安装参数，包括：
 - 基本包信息和依赖
 - 入口点和命令行工具
 - 分类器和兼容性信息
 - 可选依赖和开发工具
-
-This file configures installation parameters for the eastmoney_scraper package, including:
-- Basic package information and dependencies
-- Entry points and command-line tools
-- Classifiers and compatibility information
-- Optional dependencies and development tools
 """
 
 import os
 from setuptools import setup, find_packages
 
 # 读取版本信息从version.py文件
-# (Read version information from version.py file)
 def get_version():
     """从version.py文件获取版本信息"""
     version_file = os.path.join(os.path.dirname(__file__), 'eastmoney_scraper', 'version.py')
@@ -32,7 +24,7 @@ def get_version():
     except Exception:
         # 如果读取失败，使用默认值
         return {
-            '__version__': '1.1.0',
+            '__version__': '1.3.0',
             '__author__': 'Yaohua Guo',
             '__email__': 'guo.yaohua@foxmail.com',
             '__description__': '东方财富数据爬虫包',
@@ -41,7 +33,6 @@ def get_version():
         }
 
 # 读取README文件作为长描述
-# (Read README file as long description)
 def get_long_description():
     """获取长描述文本"""
     readme_file = os.path.join(os.path.dirname(__file__), 'README.md')
@@ -57,7 +48,6 @@ long_description = get_long_description()
 
 setup(
     # 基本包信息
-    # (Basic package information)
     name="eastmoney-scraper",
     version=version_info['__version__'],
     author=version_info['__author__'],
@@ -69,12 +59,10 @@ setup(
     license=version_info['__license__'],
     
     # 包发现和包含
-    # (Package discovery and inclusion)
     packages=find_packages(exclude=['tests', 'tests.*', 'examples', 'examples.*']),
     include_package_data=True,
     
     # PyPI分类器
-    # (PyPI classifiers)
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
@@ -96,11 +84,9 @@ setup(
     ],
     
     # Python版本要求
-    # (Python version requirements)
     python_requires=">=3.7",
     
     # 核心依赖
-    # (Core dependencies)
     install_requires=[
         "requests>=2.28.0",      # HTTP请求库，用于API调用
         "pandas>=1.5.0",         # 数据处理和分析
@@ -108,7 +94,6 @@ setup(
     ],
     
     # 可选依赖
-    # (Optional dependencies)
     extras_require={
         # 开发依赖
         "dev": [
@@ -153,7 +138,6 @@ setup(
     },
     
     # 包数据
-    # (Package data)
     package_data={
         'eastmoney_scraper': [
             '*.json',
@@ -163,7 +147,6 @@ setup(
     },
     
     # 入口点（暂时注释掉，因为CLI模块不存在）
-    # (Entry points - commented out as CLI module doesn't exist)
     # entry_points={
     #     "console_scripts": [
     #         "eastmoney-concept=eastmoney_scraper.cli:run_concept_scraper",
@@ -173,7 +156,6 @@ setup(
     # },
     
     # 项目URLs
-    # (Project URLs)
     project_urls={
         "Documentation": "https://github.com/guoyaohua/eastmoney-scraper#readme",
         "Bug Reports": "https://github.com/guoyaohua/eastmoney-scraper/issues",
@@ -183,7 +165,6 @@ setup(
     },
     
     # 关键词
-    # (Keywords)
     keywords=[
         "eastmoney", "scraper", "financial", "stock", "capital-flow",
         "concept-sector", "investment", "trading", "market-data",
@@ -191,6 +172,5 @@ setup(
     ],
     
     # Zip安全
-    # (Zip safe)
     zip_safe=False,
 )

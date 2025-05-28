@@ -1,6 +1,5 @@
 """
 东方财富数据爬虫测试套件
-EastMoney Scraper Test Suite
 
 本文件提供完整的测试功能，用于验证eastmoney_scraper包的各项功能：
 - API连接测试
@@ -8,14 +7,6 @@ EastMoney Scraper Test Suite
 - 批量处理测试
 - 完整爬取流程测试
 - 监控功能测试
-
-This file provides comprehensive testing functionality to verify various features 
-of the eastmoney_scraper package:
-- API connection testing
-- Data fetching and parsing tests
-- Batch processing tests
-- Complete scraping workflow tests
-- Monitoring functionality tests
 """
 
 import sys
@@ -26,12 +17,10 @@ from datetime import datetime
 from typing import Optional, Dict, Any
 
 # 将项目根目录添加到Python路径
-# (Add project root directory to Python path)
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
 # 导入eastmoney_scraper的公共API接口
-# (Import public API interfaces from eastmoney_scraper)
 from eastmoney_scraper import (
     # 数据获取函数
     get_stock_capital_flow,
@@ -185,8 +174,8 @@ def test_data_filtering_and_analysis() -> bool:
         # 测试TOP排序
         # (Test TOP sorting)
         print("🔄 测试TOP排序...")
-        top_5_rising = get_top_sectors(df, n=5, by='涨跌幅', ascending=False)
-        top_5_falling = get_top_sectors(df, n=5, by='涨跌幅', ascending=True)
+        top_5_rising = get_top_sectors(df, n=5, sort_by='涨跌幅', ascending=False)
+        top_5_falling = get_top_sectors(df, n=5, sort_by='涨跌幅', ascending=True)
         
         print(f"   • 涨幅前5：{len(top_5_rising)} 个")
         print(f"   • 跌幅前5：{len(top_5_falling)} 个")
@@ -329,7 +318,7 @@ def test_error_handling() -> bool:
             
             # 测试TOP排序的不存在列名
             try:
-                top_invalid = get_top_sectors(df_test, n=5, by='不存在的列', ascending=False)
+                top_invalid = get_top_sectors(df_test, n=5, sort_by='不存在的列', ascending=False)
                 # 如果没有抛出异常，检查是否有合理的fallback
                 print("   ⚠️ 无效列名处理：未抛出异常，可能有fallback机制")
             except Exception:

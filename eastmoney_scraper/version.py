@@ -1,48 +1,51 @@
 """
 东方财富爬虫包版本信息模块
-EastMoney Scraper Version Information Module
 
 本模块定义了包的版本号、作者信息、描述信息等基本元数据。
 这些信息被setup.py和__init__.py等模块引用，确保版本信息的一致性。
 
-This module defines basic metadata such as package version number, author information,
-and description. This information is referenced by setup.py and __init__.py to ensure
-version information consistency.
-
-版本更新历史 (Version Update History):
+版本更新历史:
+- v1.3.0: 重构核心模块，去英文化，优化API命名，提升代码可读性
 - v1.2.0: 优化代码结构，完善中文注释，增强API功能
 - v1.1.0: 改进错误处理和日志记录，提升性能和稳定性
 - v1.0.0: 初始版本发布，支持概念板块和个股数据爬取
 """
 
-# 版本号 - 保持与setup.py一致 (Version number - keep consistent with setup.py)
-__version__ = "1.2.0"
+# 版本号 - 保持与setup.py一致
+__version__ = "1.3.0"
 
-# 作者信息 (Author information)
+# 作者信息
 __author__ = "Yaohua Guo"
 __email__ = "guo.yaohua@foxmail.com"
 
-# 包描述信息 (Package description)
+# 包描述信息
 __description__ = "东方财富数据爬虫包 - 提供概念板块和个股资金流向数据爬取与监控功能"
-__description_en__ = "EastMoney data scraper package - provides concept sector and individual stock capital flow data scraping and monitoring"
 
-# 项目链接 (Project links)
+# 项目链接
 __url__ = "https://github.com/guoyaohua/eastmoney-scraper"
 __license__ = "MIT"
 
-# 包的关键字 (Package keywords)
+# 包的关键字
 __keywords__ = [
-    # 中文关键词 (Chinese keywords)
+    # 中文关键词
     "东方财富", "数据爬虫", "股票", "资金流向", "概念板块",
     "实时监控", "投资分析", "金融数据", "量化交易",
     
-    # 英文关键词 (English keywords)
+    # 英文关键词
     "eastmoney", "scraper", "stocks", "capital-flow", "concept-sector",
     "real-time", "monitoring", "investment", "analysis", "financial-data", "quantitative"
 ]
 
-# 更新日志 (Changelog)
+# 更新日志
 __changelog__ = {
+    "1.3.0": [
+        "重构concept_sector_scraper.py核心模块",
+        "清理所有英文注释，统一使用中文",
+        "优化类名和方法名，去掉冗余前缀",
+        "更新API接口以配合重构后的方法",
+        "更新示例文件和测试文件",
+        "完善文档和README说明"
+    ],
     "1.2.0": [
         "优化代码结构和API设计",
         "添加详细的中文注释和文档",

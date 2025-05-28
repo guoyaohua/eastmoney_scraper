@@ -1,20 +1,12 @@
 """
 东方财富数据爬虫监控器使用示例
-EastMoney Scraper Monitor Usage Examples
 
 本文件展示了eastmoney_scraper包的实时监控功能，包括：
 - 概念板块实时数据监控
-- 个股资金流向实时监控  
+- 个股资金流向实时监控
 - 多监控器同时运行
 - 自定义监控回调和警报系统
 - 监控数据的实时分析和展示
-
-This file demonstrates real-time monitoring features of the eastmoney_scraper package, including:
-- Real-time concept sector data monitoring
-- Real-time individual stock capital flow monitoring
-- Multiple monitors running simultaneously
-- Custom monitoring callbacks and alert systems
-- Real-time analysis and display of monitoring data
 """
 
 import sys
@@ -25,11 +17,9 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 # 添加父目录到Python路径以便导入eastmoney_scraper包
-# (Add parent directory to Python path for importing eastmoney_scraper package)
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # 导入eastmoney_scraper的监控器类
-# (Import monitor classes from eastmoney_scraper)
 from eastmoney_scraper import ConceptSectorMonitor, StockCapitalFlowMonitor
 import pandas as pd
 
@@ -37,7 +27,6 @@ import pandas as pd
 class MonitorStatistics:
     """
     监控统计器类，用于记录和分析监控过程中的统计信息
-    Monitor statistics class for recording and analyzing statistics during monitoring
     """
     
     def __init__(self):

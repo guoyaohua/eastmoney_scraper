@@ -8,8 +8,6 @@
 
 一个功能强大、高度优化的东方财富网数据爬虫包，提供概念板块和个股资金流向数据的爬取、监控与智能分析功能。
 
-A powerful and highly optimized EastMoney data scraper package that provides scraping, monitoring and intelligent analysis functionality for concept sectors and individual stock capital flow data.
-
 ## ✨ 核心特性
 
 - 🚀 **概念板块数据**：实时行情、多周期资金流向分析（今日/5日/10日）
@@ -418,7 +416,16 @@ pytest tests/ -v
 
 ## 📈 版本历史
 
-### v1.2.0 (2025-05-27) - 当前版本
+### v1.3.0 (2025-05-28) - 当前版本
+- 🎯 **重大重构**：完全重构 `concept_sector_scraper.py` 核心模块，优化代码结构和可读性
+- 🌐 **去英文化**：移除所有英文注释和双语注释，统一使用中文注释
+- 🔧 **API优化**：简化类名和方法名，去掉冗余前缀，提升开发体验
+- 📝 **类名更新**：`ConceptSectorFetcher` → `ConceptSectorDataFetcher`，`ConceptSectorParser` → `ConceptSectorDataParser`
+- ⚡ **方法简化**：`fetch_concept_quotes` → `fetch_all_quotes`，`parse_concept_quotes` → `parse_quotes_data` 等
+- 📚 **文档更新**：更新所有API接口、示例文件和测试文件，统一文档字符串格式
+- 🎨 **代码优化**：统一注释风格，简化文档字符串，提高代码可维护性
+
+### v1.2.0 (2025-05-27)
 - ✨ **代码优化**：全面优化代码结构和API设计，提升可维护性
 - 📝 **中文注释**：为所有函数、类、方法添加详细的中文注释和文档
 - 🔧 **功能增强**：完善数据分析和筛选工具函数，增加更多实用功能

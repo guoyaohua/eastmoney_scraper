@@ -1,18 +1,11 @@
 """
 东方财富个股资金流向数据快速入门指南
-EastMoney Individual Stock Capital Flow Quick Start Guide
 
 本文件提供个股资金流向功能的快速入门示例，包括：
 - 快速数据获取和展示
 - 基础统计分析
 - 连接测试和错误处理
 - 定时监控入门
-
-This file provides a quick start guide for individual stock capital flow features, including:
-- Quick data fetching and display
-- Basic statistical analysis
-- Connection testing and error handling
-- Scheduled monitoring introduction
 """
 
 import sys
@@ -22,11 +15,9 @@ from datetime import datetime
 from typing import Optional
 
 # 添加父目录到Python路径以便导入eastmoney_scraper包
-# (Add parent directory to Python path for importing eastmoney_scraper package)
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # 导入eastmoney_scraper的接口函数和类
-# (Import interface functions and classes from eastmoney_scraper)
 from eastmoney_scraper import (
     get_stock_capital_flow,    # 获取个股资金流向数据的便捷函数
     CapitalFlowScraper,        # 个股资金流向爬虫核心类
@@ -35,7 +26,6 @@ from eastmoney_scraper import (
 import pandas as pd
 
 # 设置pandas显示选项
-# (Configure pandas display options)
 pd.set_option('display.max_columns', 10)
 pd.set_option('display.width', 120)
 pd.set_option('display.float_format', lambda x: f'{x:.2f}')
@@ -44,7 +34,6 @@ pd.set_option('display.float_format', lambda x: f'{x:.2f}')
 def test_api_connection() -> bool:
     """
     测试API连接是否正常
-    Test if API connection is working properly
     
     Returns:
         bool: 连接成功返回True，失败返回False
@@ -72,7 +61,6 @@ def test_api_connection() -> bool:
 def quickstart_data_fetching():
     """
     快速开始：个股资金流向数据获取
-    Quick start: Individual stock capital flow data fetching
     
     展示如何快速获取和分析个股资金流向数据
     """
@@ -84,7 +72,6 @@ def quickstart_data_fetching():
     print("   提示：首次运行可能需要10-30秒，请耐心等待")
     
     # 获取个股资金流向数据（前2页，约200只股票）
-    # (Get individual stock capital flow data - first 2 pages, about 200 stocks)
     df = get_stock_capital_flow(
         max_pages=2,          # 限制页数以加快速度
         save_to_file=True     # 保存数据到文件
@@ -97,7 +84,6 @@ def quickstart_data_fetching():
     print(f"✅ 成功获取 {len(df)} 只股票的资金流向数据")
     
     # 1. 显示主力净流入TOP10
-    # (Display top 10 stocks by main capital inflow)
     print(f"\n💎 主力净流入TOP10：")
     print("─" * 80)
     top_10_inflow = df.nlargest(10, '主力净流入')
@@ -111,7 +97,6 @@ def quickstart_data_fetching():
               f"{stock['主力净流入']:>10.0f}万 {stock['主力净流入占比']:>6.1f}%")
     
     # 2. 显示主力净流出TOP5
-    # (Display top 5 stocks by main capital outflow)
     print(f"\n💸 主力净流出TOP5：")
     print("─" * 80)
     top_5_outflow = df.nsmallest(5, '主力净流入')
@@ -125,7 +110,6 @@ def quickstart_data_fetching():
               f"{abs(stock['主力净流入']):>10.0f}万")
     
     # 3. 基础统计分析
-    # (Basic statistical analysis)
     print(f"\n📊 基础统计分析：")
     print("─" * 50)
     
@@ -152,13 +136,12 @@ def quickstart_data_fetching():
     print(f"• 平均涨跌幅：{df['涨跌幅'].mean():+.2f}%")
     
     # 4. 投资机会筛选
-    # (Investment opportunity screening)
     print(f"\n🎯 投资机会筛选：")
     print("─" * 50)
     
     # 筛选条件：主力净流入>5000万 且 涨幅>2% 且 主力净流入占比>5%
     investment_opportunities = df[
-        (df['主力净流入'] > 5000) & 
+        (df['主力净流入'] > 5000) &
         (df['涨跌幅'] > 2) & 
         (df['主力净流入占比'] > 5)
     ]
@@ -176,7 +159,6 @@ def quickstart_data_fetching():
         print("建议调整筛选条件或稍后再试")
     
     # 5. 数据保存提示
-    # (Data save notification)
     print(f"\n💾 数据保存信息：")
     print("─" * 50)
     current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -190,7 +172,6 @@ def quickstart_data_fetching():
 def quickstart_advanced_scraper():
     """
     快速开始：使用高级爬虫类
-    Quick start: Using advanced scraper class
     
     展示如何使用CapitalFlowScraper类进行更精细的控制
     """
@@ -199,7 +180,6 @@ def quickstart_advanced_scraper():
     print("=" * 80)
     
     # 创建爬虫实例
-    # (Create scraper instance)
     scraper = CapitalFlowScraper()
     
     print("⚙️ 使用 CapitalFlowScraper 类可以获得更多控制权：")
@@ -233,7 +213,6 @@ def quickstart_advanced_scraper():
 def quickstart_monitoring_demo(scraper: Optional[CapitalFlowScraper] = None):
     """
     快速开始：监控演示
-    Quick start: Monitoring demonstration
     
     展示如何使用监控功能
     """
@@ -283,7 +262,6 @@ def quickstart_monitoring_demo(scraper: Optional[CapitalFlowScraper] = None):
 def main():
     """
     主函数：个股资金流向快速入门流程
-    Main function: Quick start process for individual stock capital flow
     """
     print("🎯 东方财富个股资金流向数据 - 快速入门指南")
     print("🕒 开始时间：", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))

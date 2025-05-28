@@ -1,20 +1,15 @@
 """
 东方财富数据爬虫API接口模块
-EastMoney Scraper API Interface Module
 
 本模块提供简洁易用的API接口，供外部程序调用爬虫功能。
 包含概念板块数据获取、个股资金流向分析、实时监控、数据筛选等核心功能。
 
-This module provides simple and easy-to-use API interfaces for external programs
-to call scraper functions. Includes concept sector data fetching, individual stock
-capital flow analysis, real-time monitoring, data filtering and other core features.
-
-主要功能包括 (Main features include):
-- 概念板块行情与资金流向数据获取 (Concept sector quotes and capital flow data fetching)
-- 个股资金流向排行数据获取 (Individual stock capital flow ranking data fetching)
-- 实时数据监控器 (Real-time data monitors)
-- 数据分析与筛选工具 (Data analysis and filtering tools)
-- 股票到概念板块映射关系 (Stock-to-concept sector mapping)
+主要功能包括:
+- 概念板块行情与资金流向数据获取
+- 个股资金流向排行数据获取
+- 实时数据监控器
+- 数据分析与筛选工具
+- 股票到概念板块映射关系
 """
 
 import pandas as pd
@@ -28,11 +23,10 @@ from .concept_sector_scraper import ConceptSectorScraper
 from .eastmoney_capital_flow_scraper import CapitalFlowScraper
 
 # 获取日志记录器实例，使用模块名作为日志器名称
-# (Get logger instance using module name as logger name)
 logger = logging.getLogger(__name__)
 
 
-# ==================== 概念板块数据获取接口 (Concept Sector Data Fetching APIs) ====================
+# ==================== 概念板块数据获取接口 ====================
 
 def get_concept_sectors(
     include_capital_flow: bool = True,
@@ -41,37 +35,27 @@ def get_concept_sectors(
     output_dir: str = "concept_sector_data"
 ) -> pd.DataFrame:
     """
-    获取概念板块综合数据（行情+资金流向）。
-    (Fetches comprehensive concept sector data including quotes and capital flow.)
+    获取概念板块综合数据（行情+资金流向）
     
     这是最常用的接口，能够一次性获取概念板块的完整数据，包括实时行情和多周期资金流向信息。
     适用于需要全面分析概念板块表现的场景。
     
-    (This is the most commonly used interface that can fetch complete concept sector data
-    in one call, including real-time quotes and multi-period capital flow information.
-    Suitable for scenarios requiring comprehensive analysis of concept sector performance.)
-    
     Args:
-        include_capital_flow (bool): 是否包含资金流向数据。默认为 True。
-            (Whether to include capital flow data. Default is True.)
-        periods (List[str]): 资金流向周期列表，可选值：'today', '5day', '10day'。
-            (Capital flow period list, options: 'today', '5day', '10day'.)
-        save_to_file (bool): 是否将获取的数据保存到文件。默认为 False。
-            (Whether to save fetched data to file. Default is False.)
-        output_dir (str): 数据文件的输出目录。默认为 "concept_sector_data"。
-            (Output directory for data files. Default is "concept_sector_data".)
+        include_capital_flow (bool): 是否包含资金流向数据，默认为True
+        periods (List[str]): 资金流向周期列表，可选值：'today', '5day', '10day'
+        save_to_file (bool): 是否将获取的数据保存到文件，默认为False
+        output_dir (str): 数据文件的输出目录，默认为"concept_sector_data"
     
     Returns:
         pd.DataFrame: 包含概念板块数据的Pandas DataFrame，字段包括：
-            (Pandas DataFrame containing concept sector data with fields including:)
-            - 板块代码 (Sector Code): 概念板块唯一标识符
-            - 板块名称 (Sector Name): 概念板块中文名称
-            - 涨跌幅 (Change %): 当日涨跌百分比
-            - 最新价 (Latest Price): 最新指数价格
-            - 成交额 (Volume): 成交金额
-            - 主力净流入 (Main Net Inflow): 主力资金净流入金额
-            - 5日主力净流入 (5-Day Main Net Inflow): 5日累计主力净流入
-            - 10日主力净流入 (10-Day Main Net Inflow): 10日累计主力净流入
+            - 板块代码: 概念板块唯一标识符
+            - 板块名称: 概念板块中文名称
+            - 涨跌幅: 当日涨跌百分比
+            - 最新价: 最新指数价格
+            - 成交额: 成交金额
+            - 主力净流入: 主力资金净流入金额
+            - 5日主力净流入: 5日累计主力净流入
+            - 10日主力净流入: 10日累计主力净流入
         
     Example:
         >>> # 获取所有概念板块数据
@@ -83,15 +67,12 @@ def get_concept_sectors(
         >>> print(f"获取到 {len(df)} 个概念板块数据")
     """
     # 创建概念板块爬虫实例
-    # (Create concept sector scraper instance)
     scraper = ConceptSectorScraper(output_dir=output_dir)
     
     # 爬取所有数据（包括行情和资金流向）
-    # (Scrape all data including quotes and capital flow)
     df = scraper.scrape_all_data()
     
     # 如果需要保存文件且数据不为空，则保存数据
-    # (Save data if requested and data is not empty)
     if save_to_file and not df.empty:
         scraper.save_data(df)
         logger.info(f"概念板块数据已保存到目录: {output_dir}")
@@ -101,26 +82,20 @@ def get_concept_sectors(
 
 def get_concept_sectors_realtime() -> pd.DataFrame:
     """
-    获取概念板块实时行情数据（不包含资金流向）。
-    (Fetches real-time concept sector quote data without capital flow.)
+    获取概念板块实时行情数据（不包含资金流向）
     
     此接口只获取概念板块的实时行情信息，不包含资金流向数据，速度更快。
     适用于只需要查看板块涨跌情况，不需要资金流向分析的场景。
     
-    (This interface only fetches real-time quote information for concept sectors,
-    excluding capital flow data, making it faster. Suitable for scenarios where
-    only sector price movements are needed without capital flow analysis.)
-    
     Returns:
         pd.DataFrame: 包含概念板块实时行情数据的DataFrame，字段包括：
-            (DataFrame containing real-time concept sector quote data with fields:)
-            - 板块代码 (Sector Code): 概念板块唯一标识符
-            - 板块名称 (Sector Name): 概念板块中文名称
-            - 涨跌幅 (Change %): 当日涨跌百分比
-            - 最新价 (Latest Price): 最新指数价格
-            - 成交额 (Volume): 成交金额
-            - 换手率 (Turnover Rate): 换手率百分比
-            - 领涨股 (Leading Stock): 板块内涨幅最大的股票
+            - 板块代码: 概念板块唯一标识符
+            - 板块名称: 概念板块中文名称
+            - 涨跌幅: 当日涨跌百分比
+            - 最新价: 最新指数价格
+            - 成交额: 成交金额
+            - 换手率: 换手率百分比
+            - 领涨股: 板块内涨幅最大的股票
     
     Example:
         >>> # 快速获取概念板块行情
@@ -132,18 +107,15 @@ def get_concept_sectors_realtime() -> pd.DataFrame:
         >>> print(top_gainers[['板块名称', '涨跌幅', '领涨股']])
     """
     # 创建概念板块爬虫实例
-    # (Create concept sector scraper instance)
     scraper = ConceptSectorScraper()
     
     # 只获取行情数据，不获取资金流向数据
-    # (Only fetch quote data, no capital flow data)
     fetcher = scraper.fetcher
-    quotes_data = fetcher.fetch_concept_quotes()
+    quotes_data = fetcher.fetch_all_quotes()
     
     # 解析行情数据
-    # (Parse quote data)
     parser = scraper.parser
-    df = parser.parse_concept_quotes(quotes_data)
+    df = parser.parse_quotes_data(quotes_data)
     
     logger.info(f"成功获取 {len(df)} 个概念板块的实时行情数据")
     return df
@@ -151,34 +123,27 @@ def get_concept_sectors_realtime() -> pd.DataFrame:
 
 def get_concept_capital_flow(period: str = 'today') -> pd.DataFrame:
     """
-    获取概念板块指定周期的资金流向数据。
-    (Fetches concept sector capital flow data for a specified period.)
+    获取概念板块指定周期的资金流向数据
     
     此接口专门用于获取概念板块的资金流向数据，支持不同时间周期。
     适用于专门分析资金流向趋势和主力行为的场景。
     
-    (This interface is specifically for fetching concept sector capital flow data
-    with support for different time periods. Suitable for analyzing capital flow
-    trends and institutional behavior.)
-    
     Args:
         period (str): 资金流向统计周期，可选值：
-            (Capital flow statistics period, options:)
-            - 'today': 今日资金流向 (Today's capital flow)
-            - '5day': 5日资金流向 (5-day capital flow)
-            - '10day': 10日资金流向 (10-day capital flow)
+            - 'today': 今日资金流向
+            - '5day': 5日资金流向
+            - '10day': 10日资金流向
     
     Returns:
         pd.DataFrame: 包含指定周期资金流向数据的DataFrame，字段包括：
-            (DataFrame containing capital flow data for specified period with fields:)
-            - 板块代码 (Sector Code): 概念板块唯一标识符
-            - 板块名称 (Sector Name): 概念板块中文名称
-            - 主力净流入 (Main Net Inflow): 主力资金净流入金额
-            - 主力净流入占比 (Main Net Inflow Ratio): 主力净流入占成交额比例
-            - 超大单净流入 (Super Large Order Net Inflow): 超大单资金净流入
-            - 大单净流入 (Large Order Net Inflow): 大单资金净流入
-            - 中单净流入 (Medium Order Net Inflow): 中单资金净流入
-            - 小单净流入 (Small Order Net Inflow): 小单资金净流入
+            - 板块代码: 概念板块唯一标识符
+            - 板块名称: 概念板块中文名称
+            - 主力净流入: 主力资金净流入金额
+            - 主力净流入占比: 主力净流入占成交额比例
+            - 超大单净流入: 超大单资金净流入
+            - 大单净流入: 大单资金净流入
+            - 中单净流入: 中单资金净流入
+            - 小单净流入: 小单资金净流入
     
     Example:
         >>> # 获取今日概念板块资金流向
@@ -191,27 +156,30 @@ def get_concept_capital_flow(period: str = 'today') -> pd.DataFrame:
         >>> print(f"5日主力净流入板块数量: {len(inflow_sectors)}")
     """
     # 验证周期参数
-    # (Validate period parameter)
     valid_periods = ['today', '5day', '10day']
     if period not in valid_periods:
         raise ValueError(f"无效的周期参数: {period}。有效值为: {valid_periods}")
     
     # 创建概念板块爬虫实例
-    # (Create concept sector scraper instance)
     scraper = ConceptSectorScraper()
     
-    # 获取指定周期的资金流向数据
-    # (Fetch capital flow data for specified period)
-    fetcher = scraper.fetcher
-    flow_data = fetcher.fetch_capital_flow(period=period)
+    # 获取综合数据（包含资金流向信息）
+    df = scraper.scrape_all_data()
     
-    # 解析资金流向数据
-    # (Parse capital flow data)
-    parser = scraper.parser
-    df = parser.parse_capital_flow(flow_data, period=period)
+    # 根据period筛选相关的资金流向列
+    if period == 'today':
+        columns = ['板块代码', '板块名称', '主力净流入', '主力净流入占比', '超大单净流入']
+    elif period == '5day':
+        columns = ['板块代码', '板块名称', '5日主力净流入', '5日主力净流入占比', '5日超大单净流入']
+    elif period == '10day':
+        columns = ['板块代码', '板块名称', '10日主力净流入', '10日主力净流入占比', '10日超大单净流入']
     
-    logger.info(f"成功获取 {len(df)} 个概念板块的{period}资金流向数据")
-    return df
+    # 筛选存在的列
+    existing_columns = [col for col in columns if col in df.columns]
+    result_df = df[existing_columns] if existing_columns else pd.DataFrame()
+    
+    logger.info(f"成功获取 {len(result_df)} 个概念板块的{period}资金流向数据")
+    return result_df
 
 
 def get_stock_capital_flow(
@@ -220,38 +188,28 @@ def get_stock_capital_flow(
     output_dir: str = "capital_flow_data"
 ) -> pd.DataFrame:
     """
-    获取个股资金流向排行数据。
-    (Fetches individual stock capital flow ranking data.)
+    获取个股资金流向排行数据
     
     此接口用于获取按资金流向排序的个股数据，包括主力资金、超大单、大单等各类资金的流向情况。
     数据按主力净流入金额从大到小排序，适用于寻找资金流入活跃的个股。
     
-    (This interface fetches individual stock data sorted by capital flow, including
-    institutional funds, super large orders, large orders and other types of capital flows.
-    Data is sorted by main net inflow amount in descending order, suitable for finding
-    stocks with active capital inflows.)
-    
     Args:
-        max_pages (int): 最大爬取页数，每页约100只股票。默认为 10页（约1000只股票）。
-            (Maximum pages to scrape, about 100 stocks per page. Default is 10 pages (~1000 stocks).)
-        save_to_file (bool): 是否将获取的数据保存到文件。默认为 False。
-            (Whether to save fetched data to file. Default is False.)
-        output_dir (str): 数据文件的输出目录。默认为 "capital_flow_data"。
-            (Output directory for data files. Default is "capital_flow_data".)
+        max_pages (int): 最大爬取页数，每页约100只股票，默认为10页（约1000只股票）
+        save_to_file (bool): 是否将获取的数据保存到文件，默认为False
+        output_dir (str): 数据文件的输出目录，默认为"capital_flow_data"
         
     Returns:
         pd.DataFrame: 包含个股资金流向数据的DataFrame，字段包括：
-            (DataFrame containing individual stock capital flow data with fields:)
-            - 股票代码 (Stock Code): 6位股票代码
-            - 股票名称 (Stock Name): 股票中文名称
-            - 最新价 (Latest Price): 当前股价
-            - 涨跌幅 (Change %): 涨跌百分比
-            - 主力净流入 (Main Net Inflow): 主力资金净流入金额
-            - 主力净流入占比 (Main Net Inflow Ratio): 主力净流入占成交额比例
-            - 超大单净流入 (Super Large Order Net Inflow): 超大单资金净流入
-            - 大单净流入 (Large Order Net Inflow): 大单资金净流入
-            - 中单净流入 (Medium Order Net Inflow): 中单资金净流入
-            - 小单净流入 (Small Order Net Inflow): 小单资金净流入
+            - 股票代码: 6位股票代码
+            - 股票名称: 股票中文名称
+            - 最新价: 当前股价
+            - 涨跌幅: 涨跌百分比
+            - 主力净流入: 主力资金净流入金额
+            - 主力净流入占比: 主力净流入占成交额比例
+            - 超大单净流入: 超大单资金净流入
+            - 大单净流入: 大单资金净流入
+            - 中单净流入: 中单资金净流入
+            - 小单净流入: 小单资金净流入
         
     Example:
         >>> # 获取资金流向排行前500名的股票
@@ -267,19 +225,15 @@ def get_stock_capital_flow(
         >>> print(f"主力净流入超1亿的股票：{len(big_inflow)} 只")
     """
     # 创建个股资金流向爬虫实例
-    # (Create individual stock capital flow scraper instance)
     scraper = CapitalFlowScraper()
     
     # 设置输出目录
-    # (Set output directory)
     scraper.storage.output_dir = output_dir
     
     # 爬取数据
-    # (Scrape data)
     df = scraper.scrape_once(save_to_file=save_to_file)
     
     # 返回数据，如果为None则返回空DataFrame
-    # (Return data, if None return empty DataFrame)
     result_df = df if df is not None else pd.DataFrame()
     
     if not result_df.empty:
@@ -296,27 +250,18 @@ def get_stock_to_concept_map(
     max_workers: int = 10
 ) -> Dict[str, List[str]]:
     """
-    获取个股到概念板块的映射关系。
-    (Fetches mapping relationship from individual stocks to concept sectors.)
+    获取个股到概念板块的映射关系
     
     此接口用于获取每只股票所属的概念板块信息，建立股票与概念板块之间的映射关系。
     这对于分析概念板块成分股、进行主题投资研究非常有用。
     
-    (This interface fetches information about which concept sectors each stock belongs to,
-    establishing mapping relationships between stocks and concept sectors. This is very
-    useful for analyzing concept sector constituents and thematic investment research.)
-    
     Args:
-        save_to_file (bool): 是否将映射关系保存到JSON文件。默认为 False。
-            (Whether to save mapping to JSON file. Default is False.)
-        output_dir (str): 数据文件的输出目录。默认为 "concept_sector_data"。
-            (Output directory for data files. Default is "concept_sector_data".)
-        max_workers (int): 并行处理的最大线程数。默认为 10。
-            (Maximum number of threads for parallel processing. Default is 10.)
+        save_to_file (bool): 是否将映射关系保存到JSON文件，默认为False
+        output_dir (str): 数据文件的输出目录，默认为"concept_sector_data"
+        max_workers (int): 并行处理的最大线程数，默认为10
     
     Returns:
         Dict[str, List[str]]: 股票代码到概念板块列表的映射字典，格式为：
-            (Dictionary mapping stock codes to list of concept sectors, format:)
             {
                 "000001": ["银行", "金融改革", "深圳本地股"],
                 "000002": ["房地产", "粤港澳大湾区", "深圳本地股"],
@@ -346,16 +291,13 @@ def get_stock_to_concept_map(
         >>>     print(f"  {concept}: {count}只股票")
     """
     # 创建概念板块爬虫实例
-    # (Create concept sector scraper instance)
     scraper = ConceptSectorScraper(output_dir=output_dir)
     
     # 爬取股票到概念板块的映射关系
-    # (Scrape stock-to-concept sector mapping)
     logger.info("开始获取股票到概念板块映射关系...")
-    mapping = scraper.scrape_concept_to_stock_mapping(max_workers=max_workers)
+    mapping = scraper.scrape_stock_to_concept_mapping(max_workers=max_workers)
     
     # 转换映射关系：从概念->股票列表 转为 股票->概念列表
-    # (Convert mapping: from concept->stock_list to stock->concept_list)
     stock_to_concepts = {}
     for concept, stocks in mapping.items():
         for stock in stocks:
@@ -364,10 +306,9 @@ def get_stock_to_concept_map(
             stock_to_concepts[stock].append(concept)
     
     # 如果需要保存文件
-    # (Save to file if requested)
     if save_to_file:
         filename = "stock_to_concept_mapping.json"
-        scraper.save_stock_to_concept_mapping(stock_to_concepts, filename)
+        scraper.save_mapping_data(stock_to_concepts, filename)
         logger.info(f"股票到概念板块映射已保存到文件: {filename}")
     
     logger.info(f"成功获取 {len(stock_to_concepts)} 只股票的概念板块映射关系")
