@@ -20,6 +20,7 @@ from datetime import datetime
 import logging
 import os
 from .concept_sector_scraper import ConceptSectorScraper
+from .sector_scraper import SectorScraper, SectorType
 from .eastmoney_capital_flow_scraper import CapitalFlowScraper
 
 # 获取日志记录器实例，使用模块名作为日志器名称
@@ -312,6 +313,166 @@ def get_stock_to_concept_map(
         logger.info(f"股票到概念板块映射已保存到文件: {filename}")
     
     logger.info(f"成功获取 {len(stock_to_concepts)} 只股票的概念板块映射关系")
+# ==================== 通用板块数据获取接口 ====================
+
+def get_sectors(
+    sector_type: Union[str, SectorType],
+    include_capital_flow: bool = True,
+    save_to_file: bool = False,
+    output_dir: str = None
+) -> pd.DataFrame:
+    """
+    获取板块综合数据（行情+资金流向）- 支持概念板块和行业板块
+    
+    这是新的通用接口，能够获取概念板块或行业板块的完整数据，包括实时行情和资金流向信息。
+    
+    Args:
+        sector_type (Union[str, SectorType]): 板块类型，可选值：
+            - "concept" 或 SectorType.CONCEPT: 概念板块
+            - "industry" 或 SectorType.INDUSTRY: 行业板块
+        include_capital_flow (bool): 是否包含资金流向数据，默认为True
+        save_to_file (bool): 是否将获取的数据保存到文件，默认为False
+        output_dir (str): 数据文件的输出目录，如果为None则根据板块类型自动设置
+    
+    Returns:
+        pd.DataFrame: 包含板块数据的Pandas DataFrame，字段包括：
+            - 板块代码: 板块唯一标识符
+            - 板块名称: 板块中文名称
+            - 涨跌幅: 当日涨跌百分比
+            - 最新价: 最新指数价格
+            - 成交额: 成交金额
+            - 主力净流入: 主力资金净流入金额
+            - 5日主力净流入: 5日累计主力净流入
+            - 10日主力净流入: 10日累计主力净流入
+        
+    Example:
+        >>> # 获取所有概念板块数据
+        >>> df_concept = get_sectors("concept")
+        >>> print(df_concept[['板块名称', '涨跌幅', '主力净流入']].head())
+        
+        >>> # 获取所有行业板块数据并保存到文件
+        >>> df_industry = get_sectors(SectorType.INDUSTRY, save_to_file=True)
+        >>> print(f"获取到 {len(df_industry)} 个行业板块数据")
+    """
+    # 处理板块类型参数
+    if isinstance(sector_type, str):
+        sector_type_map = {
+            "concept": SectorType.CONCEPT,
+            "industry": SectorType.INDUSTRY
+        }
+        if sector_type not in sector_type_map:
+            raise ValueError(f"无效的板块类型: {sector_type}。有效值为: {list(sector_type_map.keys())}")
+        sector_type = sector_type_map[sector_type]
+    
+    # 创建板块爬虫实例
+    scraper = SectorScraper(sector_type=sector_type, output_dir=output_dir)
+    
+    # 爬取所有数据（包括行情和资金流向）
+    df = scraper.scrape_all_data()
+    
+    # 如果需要保存文件且数据不为空，则保存数据
+    if save_to_file and not df.empty:
+        scraper.save_data(df)
+        logger.info(f"{sector_type.value}板块数据已保存到目录: {scraper.output_dir}")
+    
+    return df
+
+
+def get_industry_sectors(
+    include_capital_flow: bool = True,
+    save_to_file: bool = False,
+    output_dir: str = "industry_sector_data"
+) -> pd.DataFrame:
+    """
+    获取行业板块综合数据（行情+资金流向）
+    
+    此接口专门用于获取行业板块数据，是get_sectors的便捷封装。
+    
+    Args:
+        include_capital_flow (bool): 是否包含资金流向数据，默认为True
+        save_to_file (bool): 是否将获取的数据保存到文件，默认为False
+        output_dir (str): 数据文件的输出目录，默认为"industry_sector_data"
+    
+    Returns:
+        pd.DataFrame: 包含行业板块数据的Pandas DataFrame
+        
+    Example:
+        >>> # 获取所有行业板块数据
+        >>> df = get_industry_sectors()
+        >>> print(df[['板块名称', '涨跌幅', '主力净流入']].head())
+        
+        >>> # 获取并保存行业板块数据
+        >>> df = get_industry_sectors(save_to_file=True)
+        >>> print(f"获取到 {len(df)} 个行业板块数据")
+    """
+    return get_sectors(
+        sector_type=SectorType.INDUSTRY,
+        include_capital_flow=include_capital_flow,
+        save_to_file=save_to_file,
+        output_dir=output_dir
+    )
+
+
+def get_stock_to_sector_mapping(
+    sector_type: Union[str, SectorType],
+    save_to_file: bool = False,
+    output_dir: str = None,
+    max_workers: int = 10
+) -> Dict[str, List[str]]:
+    """
+    获取个股到板块的映射关系（支持概念板块和行业板块）
+    
+    此接口用于获取每只股票所属的板块信息，建立股票与板块之间的映射关系。
+    
+    Args:
+        sector_type (Union[str, SectorType]): 板块类型，可选值：
+            - "concept" 或 SectorType.CONCEPT: 概念板块
+            - "industry" 或 SectorType.INDUSTRY: 行业板块
+        save_to_file (bool): 是否将映射关系保存到JSON文件，默认为False
+        output_dir (str): 数据文件的输出目录，如果为None则根据板块类型自动设置
+        max_workers (int): 并行处理的最大线程数，默认为10
+    
+    Returns:
+        Dict[str, List[str]]: 股票代码到板块列表的映射字典，格式为：
+            {
+                "000001": ["银行", "金融改革", "深圳本地股"],
+                "000002": ["房地产", "粤港澳大湾区", "深圳本地股"],
+                ...
+            }
+    
+    Example:
+        >>> # 获取股票到概念板块映射
+        >>> concept_mapping = get_stock_to_sector_mapping("concept")
+        >>> print(f"获取到 {len(concept_mapping)} 只股票的概念板块映射")
+        
+        >>> # 获取股票到行业板块映射
+        >>> industry_mapping = get_stock_to_sector_mapping(SectorType.INDUSTRY, save_to_file=True)
+        >>> print(f"获取到 {len(industry_mapping)} 只股票的行业板块映射")
+    """
+    # 处理板块类型参数
+    if isinstance(sector_type, str):
+        sector_type_map = {
+            "concept": SectorType.CONCEPT,
+            "industry": SectorType.INDUSTRY
+        }
+        if sector_type not in sector_type_map:
+            raise ValueError(f"无效的板块类型: {sector_type}。有效值为: {list(sector_type_map.keys())}")
+        sector_type = sector_type_map[sector_type]
+    
+    # 创建板块爬虫实例
+    scraper = SectorScraper(sector_type=sector_type, output_dir=output_dir)
+    
+    # 爬取股票到板块的映射关系
+    logger.info(f"开始获取股票到{sector_type.value}板块映射关系...")
+    mapping = scraper.scrape_stock_to_sector_mapping(max_workers=max_workers)
+    
+    # 如果需要保存文件
+    if save_to_file:
+        scraper.save_mapping_data(mapping)
+        logger.info(f"股票到{sector_type.value}板块映射已保存到文件")
+    
+    logger.info(f"成功获取 {len(mapping)} 只股票的{sector_type.value}板块映射关系")
+    return mapping
     return stock_to_concepts
 
 

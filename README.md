@@ -2,15 +2,15 @@
 
 [![Python Version](https://img.shields.io/badge/python-3.7+-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.2.0-orange.svg)](https://github.com/guoyaohua/eastmoney-scraper)
+[![Version](https://img.shields.io/badge/version-1.3.0-orange.svg)](https://github.com/guoyaohua/eastmoney-scraper)
 [![Code Quality](https://img.shields.io/badge/code%20quality-optimized-brightgreen.svg)]()
 [![Documentation](https://img.shields.io/badge/docs-comprehensive-blue.svg)]()
 
-一个功能强大、高度优化的东方财富网数据爬虫包，提供概念板块和个股资金流向数据的爬取、监控与智能分析功能。
+一个功能强大、高度优化的东方财富网数据爬虫包，提供概念板块、行业板块和个股资金流向数据的爬取、监控与智能分析功能。
 
 ## ✨ 核心特性
 
-- 🚀 **概念板块数据**：实时行情、多周期资金流向分析（今日/5日/10日）
+- 🚀 **板块数据**：支持概念板块和行业板块，实时行情、多周期资金流向分析（今日/5日/10日）
 - 💰 **个股资金流向**：主力、超大单、大单、中单、小单资金流向追踪
 - ⚡ **高性能设计**：支持并行爬取，智能分页，自动重试机制
 - 📡 **实时监控**：内置监控器，支持定时更新和自定义回调通知
@@ -69,6 +69,29 @@ print(df[['板块名称', '涨跌幅', '主力净流入', '5日主力净流入']
 from eastmoney_scraper import get_concept_sectors_realtime
 df_quotes = get_concept_sectors_realtime()
 print(f"获取到 {len(df_quotes)} 个板块的实时行情")
+
+# 🆕 获取行业板块数据（新功能）
+from eastmoney_scraper import get_industry_sectors, get_sectors, SectorType
+
+# 方法1：使用便捷接口
+df_industry = get_industry_sectors(save_to_file=True)
+print(f"获取到 {len(df_industry)} 个行业板块")
+print(df_industry[['板块名称', '涨跌幅', '主力净流入']].head())
+
+# 方法2：使用通用接口
+df_concept = get_sectors("concept")      # 概念板块
+df_industry = get_sectors(SectorType.INDUSTRY)  # 行业板块
+
+# 🆕 获取板块成分股映射（新功能）
+from eastmoney_scraper import get_stock_to_sector_mapping
+
+# 获取股票到概念板块的映射
+concept_mapping = get_stock_to_sector_mapping("concept", save_to_file=True)
+print(f"获取到 {len(concept_mapping)} 只股票的概念板块映射")
+
+# 获取股票到行业板块的映射
+industry_mapping = get_stock_to_sector_mapping(SectorType.INDUSTRY)
+print(f"获取到 {len(industry_mapping)} 只股票的行业板块映射")
 ```
 
 ### 2️⃣ 个股资金流向数据
