@@ -2,7 +2,7 @@
 
 [![Python Version](https://img.shields.io/badge/python-3.7+-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.3.0-orange.svg)](https://github.com/guoyaohua/eastmoney-scraper)
+[![Version](https://img.shields.io/badge/version-1.4.0-orange.svg)](https://github.com/guoyaohua/eastmoney-scraper)
 [![Code Quality](https://img.shields.io/badge/code%20quality-optimized-brightgreen.svg)]()
 [![Documentation](https://img.shields.io/badge/docs-comprehensive-blue.svg)]()
 
@@ -11,13 +11,31 @@
 ## ✨ 核心特性
 
 - 🚀 **板块数据**：支持概念板块和行业板块，实时行情、多周期资金流向分析（今日/5日/10日）
-- 💰 **个股资金流向**：主力、超大单、大单、中单、小单资金流向追踪
+- 💰 **个股资金流向**：主力、超大单、大单、中单、小单资金流向追踪，支持多市场（全市场/创业板/科创板/主板）
 - ⚡ **高性能设计**：支持并行爬取，智能分页，自动重试机制
 - 📡 **实时监控**：内置监控器，支持定时更新和自定义回调通知
 - 🔧 **简洁API**：提供函数式和面向对象两种编程接口
-- 💾 **多格式存储**：支持CSV、JSON、SQLite等多种数据存储格式
-- 🔍 **智能分析**：内置数据筛选、排序、统计分析功能
+- 💾 **统一存储**：所有数据统一保存到output目录，支持CSV、JSON等格式
+- 🔍 **智能分析**：内置数据筛选、排序、统计分析和图表生成功能
 - 📊 **可视化友好**：与matplotlib、seaborn等可视化库完美集成
+
+## 🆕 v1.4.0 重构亮点
+
+### 包结构优化
+- **精简模块**：只保留 `sector_scraper.py` 和 `stock_capital_flow_scraper.py` 两个核心模块
+- **统一输出**：所有数据文件统一保存到 `output/` 目录，便于管理
+- **功能整合**：监控和分析功能集成到 `api.py`，提供更强大的功能
+
+### 新增功能
+- 🆕 **StockCapitalFlowAnalyzer** - 专业的资金流向数据分析器
+- 🆕 **增强监控器** - 支持实时显示、图表生成、连续流入分析
+- 🆕 **市场情绪分析** - 计算市场整体情绪指标
+- 🆕 **多市场支持** - 支持全市场、创业板、科创板、主板等不同市场
+
+### 向后兼容
+- ✅ 主要API接口保持不变
+- ✅ 现有代码无需修改即可使用
+- ✅ 自动适配新的输出目录结构
 
 ## 📦 安装
 
@@ -56,10 +74,40 @@ pip install -e .[dev]
 
 ## 🚀 快速开始
 
-### 1️⃣ 概念板块数据获取
+### 1️⃣ 个股资金流向数据（推荐）
 
 ```python
-from eastmoney_scraper import get_concept_sectors
+from eastmoney_scraper import StockCapitalFlowScraper, MarketType
+
+# 创建爬虫实例（全市场）
+scraper = StockCapitalFlowScraper(market_type=MarketType.ALL)
+
+# 执行一次爬取，获取前5页数据，保存为CSV
+df, filepath = scraper.run_once(max_pages=5, save_format='csv')
+
+print(f"✅ 成功爬取 {len(df)} 条数据")
+print(f"📁 数据已保存到: {filepath}")
+
+# 显示市场概况
+summary = scraper.analyze_market_summary(df)
+for key, value in summary.items():
+    print(f"{key}: {value}")
+
+# 显示主力净流入前10名
+top_inflow = scraper.get_top_inflow_stocks(df, 10)
+print("🔥 主力净流入前10名:")
+print(top_inflow[['股票代码', '股票名称', '最新价', '涨跌幅', '主力净流入']])
+
+# 不同市场的数据
+gem_scraper = StockCapitalFlowScraper(market_type=MarketType.GEM)  # 创业板
+star_scraper = StockCapitalFlowScraper(market_type=MarketType.STAR)  # 科创板
+main_scraper = StockCapitalFlowScraper(market_type=MarketType.MAIN_BOARD)  # 主板
+```
+
+### 2️⃣ 概念板块数据获取
+
+```python
+from eastmoney_scraper import get_concept_sectors, get_sectors, SectorType
 
 # 获取完整概念板块数据（行情+资金流向）
 df = get_concept_sectors()
@@ -71,16 +119,11 @@ df_quotes = get_concept_sectors_realtime()
 print(f"获取到 {len(df_quotes)} 个板块的实时行情")
 
 # 🆕 获取行业板块数据（新功能）
-from eastmoney_scraper import get_industry_sectors, get_sectors, SectorType
+from eastmoney_scraper import get_industry_sectors
 
-# 方法1：使用便捷接口
 df_industry = get_industry_sectors(save_to_file=True)
 print(f"获取到 {len(df_industry)} 个行业板块")
 print(df_industry[['板块名称', '涨跌幅', '主力净流入']].head())
-
-# 方法2：使用通用接口
-df_concept = get_sectors("concept")      # 概念板块
-df_industry = get_sectors(SectorType.INDUSTRY)  # 行业板块
 
 # 🆕 获取板块成分股映射（新功能）
 from eastmoney_scraper import get_stock_to_sector_mapping
@@ -94,47 +137,42 @@ industry_mapping = get_stock_to_sector_mapping(SectorType.INDUSTRY)
 print(f"获取到 {len(industry_mapping)} 只股票的行业板块映射")
 ```
 
-### 2️⃣ 个股资金流向数据
+### 3️⃣ 实时监控与分析（增强功能）
 
 ```python
-from eastmoney_scraper import get_stock_capital_flow
+from eastmoney_scraper import StockCapitalFlowMonitor, StockCapitalFlowAnalyzer, MarketType
 
-# 获取个股资金流向排行数据
-df = get_stock_capital_flow(max_pages=2)  # 获取前2页约200只股票
-print(df[['股票名称', '涨跌幅', '主力净流入', '主力净流入占比']].head(10))
+# 🆕 创建增强的监控器
+monitor = StockCapitalFlowMonitor(market_type=MarketType.ALL)
 
-# 使用高级爬虫类进行精确控制
-from eastmoney_scraper import CapitalFlowScraper
+# 🆕 创建数据分析器
+analyzer = StockCapitalFlowAnalyzer()
 
-scraper = CapitalFlowScraper()
-df = scraper.scrape_once(save_to_file=True)  # 自动保存到文件
-```
-
-### 3️⃣ 实时监控系统
-
-```python
-from eastmoney_scraper import ConceptSectorMonitor
-import time
-
-# 创建概念板块监控器
-monitor = ConceptSectorMonitor()
-
-# 定义数据更新回调函数
+# 数据更新回调函数
 def on_data_update(df):
-    print(f"📊 数据更新：{len(df)} 个板块")
-    if not df.empty:
-        leading = df.iloc[0]
-        print(f"🔥 领涨板块：{leading['板块名称']} (+{leading['涨跌幅']:.2f}%)")
+    print(f"📊 数据更新：{len(df)} 只股票")
+    
+    # 计算市场情绪
+    sentiment = analyzer.calculate_market_sentiment(df)
+    print(f"📈 市场情绪：{sentiment}")
+    
+    # 获取热门股票
+    top_stocks = analyzer.get_top_inflow_stocks(df, 5)
+    print("🔥 资金流入TOP5:")
+    for _, stock in top_stocks.iterrows():
+        print(f"  {stock['股票名称']}: {stock['主力净流入']:.2f}万元")
 
 # 设置回调并启动监控
 monitor.set_callback(on_data_update)
 monitor.start(interval=30)  # 每30秒更新
 
-# 运行监控
-try:
-    time.sleep(300)  # 监控5分钟
-finally:
-    monitor.stop()  # 停止监控
+# 或使用高级监控功能
+monitor.start_monitoring(
+    scrape_interval=60,      # 数据爬取间隔60秒
+    display_interval=30,     # 显示更新间隔30秒
+    max_pages=5,             # 每次爬取5页数据
+    save_format='csv'        # 保存为CSV格式
+)
 ```
 
 ### 4️⃣ 数据分析与筛选
@@ -143,7 +181,8 @@ finally:
 from eastmoney_scraper import (
     get_concept_sectors, 
     filter_sectors_by_change, 
-    get_top_sectors
+    get_top_sectors,
+    StockCapitalFlowAnalyzer
 )
 
 # 获取数据
@@ -158,35 +197,49 @@ top_inflow = get_top_sectors(df, n=10, by='主力净流入', ascending=False)
 print("💰 资金流入排行：")
 print(top_inflow[['板块名称', '涨跌幅', '主力净流入']].to_string(index=False))
 
-# 自定义复合筛选
-hot_sectors = df[
-    (df['涨跌幅'] > 2) & 
-    (df['主力净流入'] > 10000) &  # 超过1亿
-    (df['成交额'] > 100000)       # 成交额超过10亿
-]
-print(f"🎯 优质热门板块：{len(hot_sectors)} 个")
+# 🆕 使用分析器进行深度分析
+analyzer = StockCapitalFlowAnalyzer()
+
+# 加载最新数据
+latest_data = analyzer.load_latest_data()
+if not latest_data.empty:
+    # 分析连续流入的股票
+    historical_data = analyzer.load_historical_data(days=3)
+    continuous_inflow = analyzer.analyze_continuous_inflow_stocks(historical_data, days=3)
+    print(f"🎯 连续3日流入股票：{len(continuous_inflow)} 只")
+    
+    # 生成分析图表
+    scraper = StockCapitalFlowScraper(market_type=MarketType.ALL)
+    chart_path = monitor.generate_analysis_charts(latest_data)
+    print(f"📊 分析图表已保存：{chart_path}")
 ```
 
 ## 📚 详细文档
 
-### 🏗️ 项目结构
+### 🏗️ 新的项目结构（v1.4.0）
 
 ```
 eastmoney-scraper/
 ├── 📁 eastmoney_scraper/          # 核心包目录
 │   ├── 📄 __init__.py             # 包初始化和API导出
 │   ├── 📄 version.py              # 版本信息
-│   ├── 📄 api.py                  # 用户友好的API接口
-│   ├── 📄 concept_sector_scraper.py  # 概念板块爬虫
-│   ├── 📄 eastmoney_capital_flow_scraper.py  # 个股资金流爬虫
-│   └── 📄 capital_flow_monitor.py # 监控和分析模块
+│   ├── 📄 api.py                  # 用户友好的API接口（包含监控和分析功能）
+│   ├── 📄 sector_scraper.py       # 通用板块爬虫（概念+行业）
+│   └── 📄 stock_capital_flow_scraper.py  # 个股资金流向爬虫
+├── 📁 tests/                      # 测试套件
+│   └── 📄 test_stock_capital_flow_scraper.py  # 功能测试
 ├── 📁 examples/                   # 使用示例
+│   ├── 📄 stock_capital_flow_usage.py  # 个股资金流向示例
 │   ├── 📄 basic_usage.py          # 基础功能示例
 │   ├── 📄 advanced_usage.py       # 高级功能示例
-│   ├── 📄 monitor_usage.py        # 监控功能示例
-│   └── 📄 quickstart_capital_flow.py  # 快速入门指南
-├── 📁 tests/                      # 测试套件
-│   └── 📄 test_capital_flow_scraper.py  # 功能测试
+│   └── 📄 monitor_usage.py        # 监控功能示例
+├── 📁 output/                     # 🆕 统一输出目录
+│   ├── 📁 stock_capital_flow_data_all/    # 全市场数据
+│   ├── 📁 stock_capital_flow_data_gem/    # 创业板数据
+│   ├── 📁 stock_capital_flow_data_star/   # 科创板数据
+│   ├── 📁 stock_capital_flow_data_main/   # 主板数据
+│   ├── 📁 concept_sector_data/            # 概念板块数据
+│   └── 📁 industry_sector_data/           # 行业板块数据
 ├── 📄 README.md                   # 项目文档
 ├── 📄 setup.py                    # 安装配置
 └── 📄 requirements.txt            # 依赖清单
@@ -194,20 +247,24 @@ eastmoney-scraper/
 
 ### 🔧 API 参考
 
-#### 概念板块数据接口
+#### 个股资金流向接口（核心功能）
+
+| 类/函数 | 说明 | 主要参数 |
+|---------|------|----------|
+| `StockCapitalFlowScraper` | 个股资金流向爬虫 | `market_type`, `output_dir` |
+| `StockCapitalFlowMonitor` | 🆕 增强监控器 | `market_type`, `output_dir` |
+| `StockCapitalFlowAnalyzer` | 🆕 数据分析器 | `data_dir` |
+| `get_stock_capital_flow()` | 获取个股资金流向排行 | `max_pages`, `save_to_file` |
+
+#### 板块数据接口
 
 | 函数 | 说明 | 主要参数 |
 |------|------|----------|
 | `get_concept_sectors()` | 获取完整概念板块数据 | `include_capital_flow`, `periods`, `save_to_file` |
 | `get_concept_sectors_realtime()` | 仅获取实时行情 | 无 |
-| `get_concept_capital_flow()` | 获取指定周期资金流向 | `period` ('today'/'5day'/'10day') |
-
-#### 个股资金流向接口
-
-| 函数 | 说明 | 主要参数 |
-|------|------|----------|
-| `get_stock_capital_flow()` | 获取个股资金流向排行 | `max_pages`, `save_to_file` |
-| `get_stock_to_concept_map()` | 获取股票-概念映射关系 | `save_to_file`, `max_workers` |
+| `get_industry_sectors()` | 🆕 获取行业板块数据 | `include_capital_flow`, `save_to_file` |
+| `get_sectors()` | 🆕 通用板块数据获取 | `sector_type`, `include_capital_flow` |
+| `get_stock_to_sector_mapping()` | 🆕 获取股票-板块映射 | `sector_type`, `save_to_file` |
 
 #### 数据分析工具
 
@@ -217,14 +274,22 @@ eastmoney-scraper/
 | `filter_sectors_by_capital()` | 按资金流向筛选板块 | `min_capital`, `flow_type` |
 | `get_top_sectors()` | 获取排名前N的板块 | `n`, `by`, `ascending` |
 
-#### 监控器类
-
-| 类 | 说明 | 主要方法 |
-|----|------|----------|
-| `ConceptSectorMonitor` | 概念板块实时监控 | `start()`, `stop()`, `set_callback()` |
-| `StockCapitalFlowMonitor` | 个股资金流监控 | `start()`, `stop()`, `set_callback()` |
-
 ### 📊 数据字段说明
+
+#### 个股资金流向数据字段
+
+| 字段名 | 说明 | 单位 | 示例 |
+|--------|------|------|------|
+| 股票代码 | 6位股票代码 | - | `000001` |
+| 股票名称 | 股票中文名称 | - | `平安银行` |
+| 最新价 | 当前股价 | 元 | `12.34` |
+| 涨跌幅 | 涨跌百分比 | % | `2.51` |
+| 主力净流入 | 主力资金净流入 | 万元 | `5678` |
+| 主力净流入占比 | 主力净流入占成交额比例 | % | `8.75` |
+| 超大单净流入 | 超大单资金净流入 | 万元 | `3456` |
+| 大单净流入 | 大单资金净流入 | 万元 | `2222` |
+| 中单净流入 | 中单资金净流入 | 万元 | `-1111` |
+| 小单净流入 | 小单资金净流入 | 万元 | `-4567` |
 
 #### 概念板块数据字段
 
@@ -239,183 +304,170 @@ eastmoney-scraper/
 | 5日主力净流入 | 5日累计主力净流入 | 万元 | `67890` |
 | 10日主力净流入 | 10日累计主力净流入 | 万元 | `123456` |
 
-#### 个股资金流向数据字段
-
-| 字段名 | 说明 | 单位 | 示例 |
-|--------|------|------|------|
-| 股票代码 | 6位股票代码 | - | `000001` |
-| 股票名称 | 股票中文名称 | - | `平安银行` |
-| 最新价 | 当前股价 | 元 | `12.34` |
-| 涨跌幅 | 涨跌百分比 | % | `2.51` |
-| 主力净流入 | 主力资金净流入 | 万元 | `5678` |
-| 超大单净流入 | 超大单资金净流入 | 万元 | `3456` |
-| 大单净流入 | 大单资金净流入 | 万元 | `2222` |
-| 中单净流入 | 中单资金净流入 | 万元 | `-1111` |
-| 小单净流入 | 小单资金净流入 | 万元 | `-4567` |
-| 主力净流入占比 | 主力净流入占成交额比例 | % | `8.75` |
-
 ## 💡 高级用法
 
-### 智能投资机会筛选
+### 🆕 多市场数据对比分析
 
 ```python
-from eastmoney_scraper import get_concept_sectors, get_stock_capital_flow
+from eastmoney_scraper import StockCapitalFlowScraper, MarketType
+import pandas as pd
 
-# 1. 寻找强势概念板块
-concept_df = get_concept_sectors()
-strong_concepts = concept_df[
-    (concept_df['涨跌幅'] > 3) &           # 涨幅超过3%
-    (concept_df['主力净流入'] > 20000) &    # 主力流入超过2亿
-    (concept_df['5日主力净流入'] > 0)       # 5日持续流入
-]
+# 获取不同市场的数据
+markets = {
+    '全市场': MarketType.ALL,
+    '创业板': MarketType.GEM,
+    '科创板': MarketType.STAR,
+    '主板': MarketType.MAIN_BOARD
+}
 
-print(f"🎯 发现 {len(strong_concepts)} 个强势概念：")
-for _, concept in strong_concepts.head(5).iterrows():
-    print(f"  • {concept['板块名称']}：+{concept['涨跌幅']:.2f}%，"
-          f"主力流入{concept['主力净流入']/10000:.1f}亿")
+market_data = {}
+for name, market_type in markets.items():
+    scraper = StockCapitalFlowScraper(market_type=market_type)
+    df, _ = scraper.run_once(max_pages=2, save_format='csv')
+    
+    if not df.empty:
+        summary = scraper.analyze_market_summary(df)
+        market_data[name] = summary
+        print(f"📊 {name}：{summary['总股票数']}只股票，"
+              f"上涨{summary['上涨股票数']}只，"
+              f"主力净流入{summary['市场主力净流入总额(万元)']/10000:.1f}亿")
 
-# 2. 寻找资金流入活跃个股
-stock_df = get_stock_capital_flow(max_pages=3)
-active_stocks = stock_df[
-    (stock_df['主力净流入'] > 10000) &      # 主力流入超过1亿
-    (stock_df['主力净流入占比'] > 5) &       # 占比超过5%
-    (stock_df['涨跌幅'] > 1)                # 上涨超过1%
-]
-
-print(f"\n💎 发现 {len(active_stocks)} 只活跃个股：")
-for _, stock in active_stocks.head(5).iterrows():
-    print(f"  • {stock['股票名称']}({stock['股票代码']})：+{stock['涨跌幅']:.2f}%，"
-          f"主力流入{stock['主力净流入']/10000:.2f}亿")
+# 对比不同市场表现
+comparison_df = pd.DataFrame(market_data).T
+print("\n🔍 市场对比分析：")
+print(comparison_df[['总股票数', '上涨股票数', '市场主力净流入总额(万元)']])
 ```
 
-### 多监控器协同运行
+### 🆕 连续流入股票挖掘
 
 ```python
-from eastmoney_scraper import ConceptSectorMonitor, StockCapitalFlowMonitor
+from eastmoney_scraper import StockCapitalFlowAnalyzer
+
+# 创建分析器
+analyzer = StockCapitalFlowAnalyzer()
+
+# 加载历史数据
+historical_data = analyzer.load_historical_data(days=7)
+
+# 寻找连续3日流入的股票
+continuous_inflow = analyzer.analyze_continuous_inflow_stocks(historical_data, days=3)
+
+if not continuous_inflow.empty:
+    print("🎯 连续3日主力净流入股票：")
+    for _, stock in continuous_inflow.head(10).iterrows():
+        print(f"  {stock['股票名称']}({stock['股票代码']})：")
+        print(f"    累计流入: {stock['累计流入']:.2f}万元")
+        print(f"    平均每日: {stock['平均每日流入']:.2f}万元")
+        print(f"    最新涨幅: +{stock['涨跌幅']:.2f}%")
+```
+
+### 🆕 实时市场监控仪表板
+
+```python
+from eastmoney_scraper import StockCapitalFlowMonitor, MarketType
 import time
 
-class MarketMonitor:
-    """市场综合监控器"""
+class MarketDashboard:
+    """市场实时监控仪表板"""
     
     def __init__(self):
-        self.concept_monitor = ConceptSectorMonitor()
-        self.stock_monitor = StockCapitalFlowMonitor()
-        self.latest_concept_data = None
-        self.latest_stock_data = None
-    
-    def concept_callback(self, df):
-        """概念板块数据回调"""
-        self.latest_concept_data = df
-        print(f"📊 概念板块更新：{len(df)}个板块")
-        self.analyze_market()
-    
-    def stock_callback(self, df):
-        """个股数据回调"""
-        self.latest_stock_data = df
-        print(f"💰 个股数据更新：{len(df)}只股票")
-        self.analyze_market()
-    
-    def analyze_market(self):
-        """市场综合分析"""
-        if self.latest_concept_data is None or self.latest_stock_data is None:
+        self.monitor = StockCapitalFlowMonitor(market_type=MarketType.ALL)
+        self.start_time = time.time()
+        
+    def display_callback(self, df):
+        """实时显示回调"""
+        runtime = int(time.time() - self.start_time)
+        
+        print(f"\n" + "="*80)
+        print(f"📊 市场实时监控 - 运行时间: {runtime//60}分{runtime%60}秒")
+        print("="*80)
+        
+        if df.empty:
+            print("⚠️ 暂无数据")
             return
+            
+        # 市场概况
+        summary = self.monitor.scraper.analyze_market_summary(df)
+        print(f"📈 市场概况：")
+        print(f"   总计: {summary['总股票数']}只 | "
+              f"上涨: {summary['上涨股票数']}只({summary['上涨股票数']/summary['总股票数']*100:.1f}%) | "
+              f"下跌: {summary['下跌股票数']}只")
+        print(f"   主力净流入: {summary['市场主力净流入总额(万元)']/10000:.2f}亿元 | "
+              f"流入股票: {summary['主力净流入股票数']}只")
         
-        # 分析概念板块热度
-        hot_concepts = len(self.latest_concept_data[self.latest_concept_data['涨跌幅'] > 3])
+        # TOP5流入股票
+        top_inflow = self.monitor.analyzer.get_top_inflow_stocks(df, 5)
+        print(f"\n🔥 主力净流入TOP5：")
+        for i, (_, stock) in enumerate(top_inflow.iterrows(), 1):
+            print(f"   {i}. {stock['股票名称']}({stock['股票代码']})：")
+            print(f"      {stock['主力净流入']:.0f}万元 | +{stock['涨跌幅']:.2f}% | ¥{stock['最新价']}")
         
-        # 分析个股资金活跃度
-        active_stocks = len(self.latest_stock_data[self.latest_stock_data['主力净流入'] > 5000])
-        
-        print(f"🔥 市场热度：热门概念{hot_concepts}个，活跃个股{active_stocks}只")
+        # TOP3流出股票
+        top_outflow = self.monitor.analyzer.get_top_outflow_stocks(df, 3)
+        print(f"\n❄️ 主力净流出TOP3：")
+        for i, (_, stock) in enumerate(top_outflow.iterrows(), 1):
+            print(f"   {i}. {stock['股票名称']}({stock['股票代码']})：")
+            print(f"      {stock['主力净流入']:.0f}万元 | {stock['涨跌幅']:+.2f}% | ¥{stock['最新价']}")
     
-    def start(self):
+    def start_monitoring(self):
         """启动监控"""
-        self.concept_monitor.set_callback(self.concept_callback)
-        self.stock_monitor.set_callback(self.stock_callback)
+        self.monitor.set_callback(self.display_callback)
+        self.monitor.start(interval=30)  # 30秒更新一次
         
-        self.concept_monitor.start(interval=30)
-        self.stock_monitor.start(interval=60)
+        print("🚀 市场监控仪表板已启动")
+        print("⏹️ 按 Ctrl+C 停止监控")
         
-        print("🚀 市场监控系统已启动")
-    
-    def stop(self):
-        """停止监控"""
-        self.concept_monitor.stop()
-        self.stock_monitor.stop()
-        print("⏹️ 市场监控系统已停止")
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("\n⏹️ 正在停止监控...")
+            self.monitor.stop()
+            print("✅ 监控已停止")
 
 # 使用示例
-monitor = MarketMonitor()
-try:
-    monitor.start()
-    time.sleep(180)  # 运行3分钟
-finally:
-    monitor.stop()
-```
-
-### 定时任务调度
-
-```python
-import schedule
-import time
-from datetime import datetime
-from eastmoney_scraper import get_concept_sectors, get_stock_capital_flow
-
-def market_snapshot():
-    """市场快照任务"""
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    # 获取概念板块数据
-    concept_df = get_concept_sectors(save_to_file=True)
-    rising_concepts = len(concept_df[concept_df['涨跌幅'] > 0])
-    
-    # 获取个股数据
-    stock_df = get_stock_capital_flow(max_pages=1, save_to_file=True)
-    rising_stocks = len(stock_df[stock_df['涨跌幅'] > 0])
-    
-    print(f"📸 [{timestamp}] 市场快照：")
-    print(f"   概念板块：{len(concept_df)}个（上涨{rising_concepts}个）")
-    print(f"   个股样本：{len(stock_df)}只（上涨{rising_stocks}只）")
-
-# 调度任务
-schedule.every(5).minutes.do(market_snapshot)      # 每5分钟执行
-schedule.every().hour.at(":00").do(market_snapshot) # 每小时整点执行
-
-print("⏰ 定时任务已设置，按Ctrl+C停止")
-try:
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
-except KeyboardInterrupt:
-    print("\n📋 定时任务已停止")
+dashboard = MarketDashboard()
+dashboard.start_monitoring()
 ```
 
 ## 🧪 测试与示例
 
-### 运行示例代码
+### 运行测试
 
 ```bash
-# 基础功能示例
-python examples/basic_usage.py
+# 运行主要功能测试
+python tests/test_stock_capital_flow_scraper.py
 
-# 高级功能示例
-python examples/advanced_usage.py
-
-# 监控功能示例
-python examples/monitor_usage.py
-
-# 快速入门指南
-python examples/quickstart_capital_flow.py
+# 运行示例代码
+python examples/stock_capital_flow_usage.py
 ```
 
-### 运行测试套件
+### 测试输出示例
 
-```bash
-# 运行完整测试
-python tests/test_capital_flow_scraper.py
+```
+🚀 开始测试 - 2025-05-29 20:43:40
+🧪 测试个股资金流向爬虫
+============================================================
+✅ 爬虫实例创建成功
+📡 开始爬取数据...
+✅ 成功爬取 100 条数据
+📁 数据已保存到: output\stock_capital_flow_all_20250529_204342.csv
 
-# 使用pytest运行（需要安装pytest）
-pytest tests/ -v
+📊 数据列信息:
+   - 股票代码、股票名称、最新价、涨跌幅
+   - 成交量、成交额、主力净流入、主力净流入占比
+   - 超大单净流入、大单净流入、中单净流入、小单净流入
+
+🔍 市场概况分析:
+   总股票数: 100
+   主力净流入股票数: 100
+   上涨股票数: 98
+   市场主力净流入总额(万元): 2001990.2
+
+🔥 主力净流入TOP5:
+   山子高科(000981): 70563.60万元
+   四方精创(300468): 65772.71万元
+   中超控股(002471): 58095.77万元
 ```
 
 ## ⚠️ 注意事项
@@ -436,10 +488,22 @@ pytest tests/ -v
 | 数据格式错误 | API接口变化 | 提交Issue报告问题 |
 | 内存占用过高 | 数据量过大 | 减少`max_pages`参数 |
 | 监控器无响应 | 回调函数异常 | 检查回调函数逻辑 |
+| 文件保存失败 | 权限/空间不足 | 检查output目录权限和磁盘空间 |
 
 ## 📈 版本历史
 
-### v1.3.0 (2025-05-28) - 当前版本
+### v1.4.0 (2025-05-29) - 当前版本 🆕
+- 🎯 **重大重构**：精简包结构，删除冗余模块，保留核心功能
+- 📁 **统一输出**：所有数据文件统一保存到`output/`目录，便于管理
+- 🔧 **监控整合**：将监控器和分析器功能集成到`api.py`，功能更强大
+- 📊 **新增分析器**：`StockCapitalFlowAnalyzer`提供专业数据分析功能
+- 🎨 **增强监控**：支持实时显示、图表生成、连续流入分析、市场情绪计算
+- 🌟 **多市场支持**：个股资金流向支持全市场、创业板、科创板、主板
+- 🧪 **测试优化**：测试文件移动到`tests/`目录，示例代码更新
+- 📚 **文档完善**：整合重构信息，更新API文档和使用示例
+- ✅ **向后兼容**：保持主要API接口不变，现有代码无需修改
+
+### v1.3.0 (2025-05-28)
 - 🎯 **重大重构**：完全重构 `concept_sector_scraper.py` 核心模块，优化代码结构和可读性
 - 🌐 **去英文化**：移除所有英文注释和双语注释，统一使用中文注释
 - 🔧 **API优化**：简化类名和方法名，去掉冗余前缀，提升开发体验
@@ -487,7 +551,7 @@ cd eastmoney-scraper
 pip install -e .[dev]
 
 # 运行测试
-python tests/test_capital_flow_scraper.py
+python tests/test_stock_capital_flow_scraper.py
 
 # 代码格式化
 black eastmoney_scraper/
@@ -498,23 +562,21 @@ flake8 eastmoney_scraper/
 
 ## 📄 许可证
 
-本项目采用 [MIT License](LICENSE) 许可证。
+本项目基于 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
 
-## ⚖️ 免责声明
+## 🙏 致谢
 
-本项目仅供学习和研究使用，不构成任何投资建议。使用本项目获取的数据进行投资决策，风险自负。请遵守东方财富网的服务条款和数据使用政策。
+感谢东方财富网提供的数据服务，本项目仅用于学习和研究目的。
 
-## 📞 联系方式
+## ⭐ 支持项目
 
-- 📧 邮箱：guo.yaohua@foxmail.com
-- 🐛 问题反馈：[GitHub Issues](https://github.com/guoyaohua/eastmoney-scraper/issues)
-- 📖 项目主页：[GitHub Repository](https://github.com/guoyaohua/eastmoney-scraper)
+如果这个项目对你有帮助，请给它一个⭐️！
 
 ---
 
 <div align="center">
 
-**⭐ 如果这个项目对您有帮助，请给我们一个星标！**
+**🎯 EastMoney Scraper - 让数据获取变得简单**
 
 Made with ❤️ by [Yaohua Guo](https://github.com/guoyaohua)
 

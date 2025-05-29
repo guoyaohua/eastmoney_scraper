@@ -24,9 +24,8 @@ from .version import (
 )
 
 # 核心爬虫类导入
-from .concept_sector_scraper import ConceptSectorScraper  # 概念板块爬虫主类
 from .sector_scraper import SectorScraper, SectorType  # 通用板块爬虫主类和类型枚举
-from .eastmoney_capital_flow_scraper import CapitalFlowScraper  # 个股资金流向爬虫主类
+from .stock_capital_flow_scraper import StockCapitalFlowScraper, MarketType  # 个股资金流向爬虫主类
 
 # 从API模块导入用户友好的接口函数和监控器类
 from .api import (
@@ -45,6 +44,7 @@ from .api import (
     # 实时监控器类
     ConceptSectorMonitor,         # 概念板块实时数据监控器
     StockCapitalFlowMonitor,      # 个股资金流向实时数据监控器
+    StockCapitalFlowAnalyzer,     # 个股资金流向数据分析器
     
     # 数据分析与筛选工具函数
     filter_sectors_by_change,     # 根据涨跌幅筛选板块数据
@@ -55,14 +55,15 @@ from .api import (
 # 定义包的公开API接口列表，用于 `from eastmoney_scraper import *` 导入
 __all__ = [
     # 核心爬虫类
-    "ConceptSectorScraper",         # 概念板块数据爬虫主类
     "SectorScraper",                # 通用板块数据爬虫主类
     "SectorType",                   # 板块类型枚举
-    "CapitalFlowScraper",           # 个股资金流向数据爬虫主类
+    "StockCapitalFlowScraper",      # 个股资金流向数据爬虫主类
+    "MarketType",                   # 市场类型枚举
     
-    # 实时监控器类
+    # 实时监控器类和分析器类
     "ConceptSectorMonitor",         # 概念板块实时数据监控器类
     "StockCapitalFlowMonitor",      # 个股资金流向实时数据监控器类
+    "StockCapitalFlowAnalyzer",     # 个股资金流向数据分析器类
     
     # 主要功能函数
     "get_concept_sectors",          # 获取概念板块完整数据

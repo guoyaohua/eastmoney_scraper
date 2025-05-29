@@ -499,7 +499,7 @@ class SectorScraper:
         
         # 设置输出目录
         if output_dir is None:
-            output_dir = f"{sector_type.value}_sector_data"
+            output_dir = f"output/{sector_type.value}_sector_data"
         self.output_dir = output_dir
         os.makedirs(self.output_dir, exist_ok=True)  # 创建输出目录（如果不存在）
 

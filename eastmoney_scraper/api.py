@@ -16,12 +16,18 @@ import pandas as pd
 from typing import Optional, Dict, List, Callable, Union
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 import os
-from .concept_sector_scraper import ConceptSectorScraper
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 from .sector_scraper import SectorScraper, SectorType
-from .eastmoney_capital_flow_scraper import CapitalFlowScraper
+from .stock_capital_flow_scraper import StockCapitalFlowScraper, MarketType
+
+# 设置中文字体
+plt.rcParams['font.sans-serif'] = ['SimHei']
+plt.rcParams['axes.unicode_minus'] = False
 
 # 获取日志记录器实例，使用模块名作为日志器名称
 logger = logging.getLogger(__name__)
@@ -33,7 +39,7 @@ def get_concept_sectors(
     include_capital_flow: bool = True,
     periods: List[str] = ['today', '5day', '10day'],
     save_to_file: bool = False,
-    output_dir: str = "concept_sector_data"
+    output_dir: str = "output/concept_sector_data"
 ) -> pd.DataFrame:
     """
     获取概念板块综合数据（行情+资金流向）
@@ -68,7 +74,7 @@ def get_concept_sectors(
         >>> print(f"获取到 {len(df)} 个概念板块数据")
     """
     # 创建概念板块爬虫实例
-    scraper = ConceptSectorScraper(output_dir=output_dir)
+    scraper = SectorScraper(sector_type=SectorType.CONCEPT, output_dir=output_dir)
     
     # 爬取所有数据（包括行情和资金流向）
     df = scraper.scrape_all_data()
@@ -108,7 +114,7 @@ def get_concept_sectors_realtime() -> pd.DataFrame:
         >>> print(top_gainers[['板块名称', '涨跌幅', '领涨股']])
     """
     # 创建概念板块爬虫实例
-    scraper = ConceptSectorScraper()
+    scraper = SectorScraper(sector_type=SectorType.CONCEPT)
     
     # 只获取行情数据，不获取资金流向数据
     fetcher = scraper.fetcher
@@ -162,7 +168,7 @@ def get_concept_capital_flow(period: str = 'today') -> pd.DataFrame:
         raise ValueError(f"无效的周期参数: {period}。有效值为: {valid_periods}")
     
     # 创建概念板块爬虫实例
-    scraper = ConceptSectorScraper()
+    scraper = SectorScraper(sector_type=SectorType.CONCEPT)
     
     # 获取综合数据（包含资金流向信息）
     df = scraper.scrape_all_data()
@@ -186,7 +192,7 @@ def get_concept_capital_flow(period: str = 'today') -> pd.DataFrame:
 def get_stock_capital_flow(
     max_pages: int = 10,
     save_to_file: bool = False,
-    output_dir: str = "capital_flow_data"
+    output_dir: str = "output/capital_flow_data"
 ) -> pd.DataFrame:
     """
     获取个股资金流向排行数据
@@ -226,13 +232,13 @@ def get_stock_capital_flow(
         >>> print(f"主力净流入超1亿的股票：{len(big_inflow)} 只")
     """
     # 创建个股资金流向爬虫实例
-    scraper = CapitalFlowScraper()
-    
-    # 设置输出目录
-    scraper.storage.output_dir = output_dir
+    scraper = StockCapitalFlowScraper(market_type=MarketType.ALL, output_dir=output_dir)
     
     # 爬取数据
-    df = scraper.scrape_once(save_to_file=save_to_file)
+    if save_to_file:
+        df, filepath = scraper.run_once(max_pages=max_pages, save_format='csv')
+    else:
+        df = scraper.scrape_all_data(max_pages=max_pages)
     
     # 返回数据，如果为None则返回空DataFrame
     result_df = df if df is not None else pd.DataFrame()
@@ -247,7 +253,7 @@ def get_stock_capital_flow(
 
 def get_stock_to_concept_map(
     save_to_file: bool = False,
-    output_dir: str = "concept_sector_data",
+    output_dir: str = "output/concept_sector_data",
     max_workers: int = 10
 ) -> Dict[str, List[str]]:
     """
@@ -292,11 +298,11 @@ def get_stock_to_concept_map(
         >>>     print(f"  {concept}: {count}只股票")
     """
     # 创建概念板块爬虫实例
-    scraper = ConceptSectorScraper(output_dir=output_dir)
+    scraper = SectorScraper(sector_type=SectorType.CONCEPT, output_dir=output_dir)
     
     # 爬取股票到概念板块的映射关系
     logger.info("开始获取股票到概念板块映射关系...")
-    mapping = scraper.scrape_stock_to_concept_mapping(max_workers=max_workers)
+    mapping = scraper.scrape_stock_to_sector_mapping(max_workers=max_workers)
     
     # 转换映射关系：从概念->股票列表 转为 股票->概念列表
     stock_to_concepts = {}
@@ -308,9 +314,8 @@ def get_stock_to_concept_map(
     
     # 如果需要保存文件
     if save_to_file:
-        filename = "stock_to_concept_mapping.json"
-        scraper.save_mapping_data(stock_to_concepts, filename)
-        logger.info(f"股票到概念板块映射已保存到文件: {filename}")
+        scraper.save_mapping_data(stock_to_concepts)
+        logger.info(f"股票到概念板块映射已保存到文件")
     
     logger.info(f"成功获取 {len(stock_to_concepts)} 只股票的概念板块映射关系")
 # ==================== 通用板块数据获取接口 ====================
@@ -381,7 +386,7 @@ def get_sectors(
 def get_industry_sectors(
     include_capital_flow: bool = True,
     save_to_file: bool = False,
-    output_dir: str = "industry_sector_data"
+    output_dir: str = "output/industry_sector_data"
 ) -> pd.DataFrame:
     """
     获取行业板块综合数据（行情+资金流向）
@@ -498,7 +503,7 @@ class ConceptSectorMonitor:
     - 数据自动保存功能 (Automatic data saving functionality)
     """
     
-    def __init__(self, output_dir: str = "concept_sector_data"):
+    def __init__(self, output_dir: str = "output/concept_sector_data"):
         """
         初始化概念板块监控器。
         (Initialize concept sector monitor.)
@@ -509,7 +514,7 @@ class ConceptSectorMonitor:
         """
         # 创建概念板块爬虫实例
         # (Create concept sector scraper instance)
-        self.scraper = ConceptSectorScraper(output_dir=output_dir)
+        self.scraper = SectorScraper(sector_type=SectorType.CONCEPT, output_dir=output_dir)
         
         # 监控状态控制
         # (Monitor status control)
@@ -668,104 +673,367 @@ class ConceptSectorMonitor:
         logger.info("概念板块监控循环已结束")
 
 
-class StockCapitalFlowMonitor:
-    """
-    个股资金流向实时数据监控器。
-    (Real-time individual stock capital flow data monitor.)
+class StockCapitalFlowAnalyzer:
+    """个股资金流向分析器"""
     
-    此监控器能够定时获取个股资金流向排行数据，支持自定义回调函数来处理更新的数据。
-    适用于需要实时跟踪个股资金流向变化、寻找热门股票的应用场景。
+    def __init__(self, data_dir: str = "output/stock_capital_flow_data_all"):
+        self.data_dir = data_dir
+        os.makedirs(self.data_dir, exist_ok=True)
     
-    (This monitor can periodically fetch individual stock capital flow ranking data
-    and supports custom callback functions to process updated data. Suitable for
-    applications that need real-time tracking of individual stock capital flow changes
-    and finding hot stocks.)
-    
-    主要功能 (Main Features):
-    - 定时自动获取个股资金流向数据 (Automatic periodic fetching of stock capital flow data)
-    - 支持自定义数据更新回调 (Support for custom data update callbacks)
-    - 线程安全的启停控制 (Thread-safe start/stop control)
-    - 异常处理和错误恢复 (Exception handling and error recovery)
-    - 数据自动保存功能 (Automatic data saving functionality)
-    """
-    
-    def __init__(self, output_dir: str = "capital_flow_data"):
+    def load_latest_data(self, filename_pattern: str = "stock_capital_flow") -> pd.DataFrame:
         """
-        初始化个股资金流向监控器。
-        (Initialize individual stock capital flow monitor.)
+        加载最新的资金流向数据
         
         Args:
-            output_dir (str): 数据文件输出目录。默认为 "capital_flow_data"。
-                (Output directory for data files. Default is "capital_flow_data".)
+            filename_pattern (str): 文件名模式
+            
+        Returns:
+            pd.DataFrame: 最新的数据
         """
-        # 创建个股资金流向爬虫实例
-        # (Create individual stock capital flow scraper instance)
-        self.scraper = CapitalFlowScraper()
-        self.scraper.storage.output_dir = output_dir
-        os.makedirs(output_dir, exist_ok=True) # 创建输出目录 (如果不存在) (Create output directory if it doesn't exist)
+        try:
+            # 查找最新的CSV文件
+            csv_files = [f for f in os.listdir(self.data_dir)
+                        if f.startswith(filename_pattern) and f.endswith('.csv')]
+            
+            if not csv_files:
+                logger.warning(f"在目录 {self.data_dir} 中未找到资金流向数据文件")
+                return pd.DataFrame()
+            
+            # 按文件名排序，获取最新文件
+            latest_file = sorted(csv_files)[-1]
+            filepath = os.path.join(self.data_dir, latest_file)
+            
+            df = pd.read_csv(filepath, encoding='utf-8-sig')
+            logger.info(f"成功加载数据文件: {latest_file}, 数据条数: {len(df)}")
+            
+            return df
+            
+        except Exception as e:
+            logger.error(f"加载数据时发生错误: {e}")
+            return pd.DataFrame()
+    
+    def load_historical_data(self, days: int = 7, filename_pattern: str = "stock_capital_flow") -> List[pd.DataFrame]:
+        """
+        加载历史数据
+        
+        Args:
+            days (int): 加载最近几天的数据
+            filename_pattern (str): 文件名模式
+            
+        Returns:
+            List[pd.DataFrame]: 历史数据列表
+        """
+        try:
+            csv_files = [f for f in os.listdir(self.data_dir)
+                        if f.startswith(filename_pattern) and f.endswith('.csv')]
+            
+            if not csv_files:
+                return []
+            
+            # 按时间排序，获取最近的文件
+            csv_files.sort()
+            cutoff_date = datetime.now() - timedelta(days=days)
+            
+            historical_data = []
+            for filename in csv_files[-days*10:]:  # 取更多文件以防有些时间段没有数据
+                try:
+                    # 从文件名提取时间信息
+                    time_part = filename.split('_')[-2] + '_' + filename.split('_')[-1].replace('.csv', '')
+                    file_time = datetime.strptime(time_part, '%Y%m%d_%H%M%S')
+                    
+                    if file_time >= cutoff_date:
+                        filepath = os.path.join(self.data_dir, filename)
+                        df = pd.read_csv(filepath, encoding='utf-8-sig')
+                        if not df.empty:
+                            df['文件时间'] = file_time
+                            historical_data.append(df)
+                            
+                except Exception as e:
+                    logger.warning(f"解析文件 {filename} 时出错: {e}")
+                    continue
+            
+            logger.info(f"成功加载 {len(historical_data)} 个历史数据文件")
+            return historical_data
+            
+        except Exception as e:
+            logger.error(f"加载历史数据时发生错误: {e}")
+            return []
+    
+    def get_top_inflow_stocks(self, df: pd.DataFrame, top_n: int = 20) -> pd.DataFrame:
+        """获取主力净流入最多的股票"""
+        if df.empty or '主力净流入' not in df.columns:
+            return pd.DataFrame()
+        
+        return df.nlargest(top_n, '主力净流入')[
+            ['股票代码', '股票名称', '最新价', '涨跌幅', '主力净流入', '主力净流入占比', '数据获取时间']
+        ]
+    
+    def get_top_outflow_stocks(self, df: pd.DataFrame, top_n: int = 20) -> pd.DataFrame:
+        """获取主力净流出最多的股票"""
+        if df.empty or '主力净流入' not in df.columns:
+            return pd.DataFrame()
+        
+        return df.nsmallest(top_n, '主力净流入')[
+            ['股票代码', '股票名称', '最新价', '涨跌幅', '主力净流入', '主力净流入占比', '数据获取时间']
+        ]
+    
+    def analyze_continuous_inflow_stocks(self, historical_data: List[pd.DataFrame], days: int = 3) -> pd.DataFrame:
+        """
+        分析连续多日主力净流入的股票
+        
+        Args:
+            historical_data (List[pd.DataFrame]): 历史数据列表
+            days (int): 连续天数
+            
+        Returns:
+            pd.DataFrame: 连续流入的股票
+        """
+        if not historical_data or len(historical_data) < days:
+            return pd.DataFrame()
+        
+        try:
+            # 合并历史数据
+            all_data = pd.concat(historical_data, ignore_index=True)
+            
+            # 按股票代码分组分析
+            continuous_stocks = []
+            
+            for stock_code, group in all_data.groupby('股票代码'):
+                # 按时间排序
+                group_sorted = group.sort_values('文件时间')
+                
+                # 获取最近几天的数据
+                recent_data = group_sorted.tail(days)
+                
+                if len(recent_data) >= days:
+                    # 检查是否连续流入
+                    inflow_values = recent_data['主力净流入'].values
+                    if all(val > 0 for val in inflow_values):
+                        latest_data = recent_data.iloc[-1]
+                        continuous_stocks.append({
+                            '股票代码': stock_code,
+                            '股票名称': latest_data['股票名称'],
+                            '最新价': latest_data['最新价'],
+                            '涨跌幅': latest_data['涨跌幅'],
+                            '连续流入天数': days,
+                            '累计流入': inflow_values.sum(),
+                            '平均每日流入': inflow_values.mean(),
+                            '最新流入': latest_data['主力净流入']
+                        })
+            
+            result_df = pd.DataFrame(continuous_stocks)
+            if not result_df.empty:
+                result_df = result_df.sort_values('累计流入', ascending=False)
+            
+            return result_df
+            
+        except Exception as e:
+            logger.error(f"分析连续流入股票时发生错误: {e}")
+            return pd.DataFrame()
+    
+    def calculate_market_sentiment(self, df: pd.DataFrame) -> Dict:
+        """
+        计算市场情绪指标
+        
+        Args:
+            df (pd.DataFrame): 股票数据
+            
+        Returns:
+            Dict: 市场情绪指标
+        """
+        if df.empty:
+            return {}
+        
+        try:
+            total_stocks = len(df)
+            inflow_stocks = len(df[df['主力净流入'] > 0]) if '主力净流入' in df.columns else 0
+            outflow_stocks = len(df[df['主力净流入'] < 0]) if '主力净流入' in df.columns else 0
+            
+            up_stocks = len(df[df['涨跌幅'] > 0]) if '涨跌幅' in df.columns else 0
+            down_stocks = len(df[df['涨跌幅'] < 0]) if '涨跌幅' in df.columns else 0
+            
+            total_inflow = df['主力净流入'].sum() if '主力净流入' in df.columns else 0
+            
+            sentiment = {
+                '总股票数': total_stocks,
+                '主力净流入股票数': inflow_stocks,
+                '主力净流出股票数': outflow_stocks,
+                '上涨股票数': up_stocks,
+                '下跌股票数': down_stocks,
+                '资金流入比例': round(inflow_stocks / total_stocks * 100, 2) if total_stocks > 0 else 0,
+                '上涨股票比例': round(up_stocks / total_stocks * 100, 2) if total_stocks > 0 else 0,
+                '市场总流入(万元)': round(total_inflow, 2),
+                '平均流入(万元)': round(total_inflow / total_stocks, 2) if total_stocks > 0 else 0,
+                '更新时间': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }
+            
+            return sentiment
+            
+        except Exception as e:
+            logger.error(f"计算市场情绪时发生错误: {e}")
+            return {}
+
+
+class StockCapitalFlowMonitor:
+    """个股资金流向监控器"""
+    
+    def __init__(self, market_type: MarketType = MarketType.ALL, output_dir: str = None):
+        self.market_type = market_type
+        self.scraper = StockCapitalFlowScraper(market_type=market_type, output_dir=output_dir)
+        self.analyzer = StockCapitalFlowAnalyzer(self.scraper.output_dir)
+        self.is_monitoring = False
         
         # 监控状态控制
-        # (Monitor status control)
         self.is_running = False
         self.thread: Optional[threading.Thread] = None
         
         # 回调函数和数据存储
-        # (Callback function and data storage)
         self.callback: Optional[Callable[[pd.DataFrame], None]] = None
         self.interval = 10
         self.last_data: Optional[pd.DataFrame] = None
-        
-        logger.debug(f"个股资金流向监控器已初始化，输出目录: {output_dir}")
-        
+    
     def set_callback(self, callback: Callable[[pd.DataFrame], None]) -> None:
-        """
-        设置数据更新回调函数。
-        (Set data update callback function.)
-        
-        回调函数将在每次获取到新数据时被调用，接收DataFrame作为参数。
-        (Callback function will be called every time new data is fetched,
-        receiving DataFrame as parameter.)
-        
-        Args:
-            callback (Callable[[pd.DataFrame], None]): 数据更新回调函数。
-                (Data update callback function.)
-        
-        Example:
-            >>> def my_callback(df):
-            >>>     print(f"获取到 {len(df)} 只股票数据")
-            >>>     top_stock = df.iloc[0]
-            >>>     print(f"资金流入最多: {top_stock['股票名称']}")
-            >>>
-            >>> monitor = StockCapitalFlowMonitor()
-            >>> monitor.set_callback(my_callback)
-        """
+        """设置数据更新回调函数"""
         self.callback = callback
         logger.debug("数据更新回调函数已设置")
         
     def get_latest_data(self) -> Optional[pd.DataFrame]:
-        """
-        获取最新的个股资金流向数据。
-        (Get the latest individual stock capital flow data.)
-        
-        Returns:
-            Optional[pd.DataFrame]: 最新的个股资金流向数据，如果还没有数据则返回None。
-                (Latest individual stock capital flow data, returns None if no data available yet.)
-        """
+        """获取最新的个股资金流向数据"""
         return self.last_data
+    
+    def display_realtime_data(self):
+        """显示实时数据"""
+        # 清屏
+        os.system('cls' if os.name == 'nt' else 'clear')
         
-    def start(self, interval: int = 10) -> None:
+        print("=" * 100)
+        print(f"个股资金流向实时监控 ({self.market_type.value}市场) - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print("=" * 100)
+        
+        # 加载最新数据
+        latest_data = self.analyzer.load_latest_data()
+        
+        if latest_data.empty:
+            print("暂无数据")
+            return
+        
+        # 市场情绪指标
+        sentiment = self.analyzer.calculate_market_sentiment(latest_data)
+        if sentiment:
+            print(f"\n【市场概况】")
+            print("-" * 100)
+            print(f"总股票数: {sentiment['总股票数']} | "
+                  f"上涨: {sentiment['上涨股票数']}({sentiment['上涨股票比例']}%) | "
+                  f"下跌: {sentiment['下跌股票数']} | "
+                  f"资金流入股票: {sentiment['主力净流入股票数']}({sentiment['资金流入比例']}%)")
+            print(f"市场总流入: {sentiment['市场总流入(万元)']}万元 | "
+                  f"平均流入: {sentiment['平均流入(万元)']}万元")
+        
+        # 主力净流入TOP20
+        top_inflow = self.analyzer.get_top_inflow_stocks(latest_data, 20)
+        if not top_inflow.empty:
+            print(f"\n【主力净流入TOP20】")
+            print("-" * 100)
+            print(f"{'股票代码':<10} {'股票名称':<12} {'最新价':<10} {'涨跌幅':<10} {'主力净流入(万)':<15} {'流入占比(%)':<12}")
+            print("-" * 100)
+            
+            for _, row in top_inflow.iterrows():
+                print(f"{row['股票代码']:<10} {row['股票名称']:<12} "
+                      f"{row['最新价']:<10.2f} {row['涨跌幅']:<10.2f} "
+                      f"{row['主力净流入']:<15.2f} {row['主力净流入占比']:<12.2f}")
+        
+        # 主力净流出TOP10
+        top_outflow = self.analyzer.get_top_outflow_stocks(latest_data, 10)
+        if not top_outflow.empty:
+            print(f"\n【主力净流出TOP10】")
+            print("-" * 100)
+            print(f"{'股票代码':<10} {'股票名称':<12} {'最新价':<10} {'涨跌幅':<10} {'主力净流出(万)':<15} {'流出占比(%)':<12}")
+            print("-" * 100)
+            
+            for _, row in top_outflow.iterrows():
+                print(f"{row['股票代码']:<10} {row['股票名称']:<12} "
+                      f"{row['最新价']:<10.2f} {row['涨跌幅']:<10.2f} "
+                      f"{row['主力净流入']:<15.2f} {row['主力净流入占比']:<12.2f}")
+    
+    def generate_analysis_charts(self, df: pd.DataFrame) -> str:
         """
-        启动个股资金流向监控器。
-        (Start the individual stock capital flow monitor.)
+        生成分析图表
         
         Args:
-            interval (int): 数据更新间隔（秒）。默认为 10秒。
-                (Data update interval in seconds. Default is 10 seconds.)
-        
-        Note:
-            如果监控器已经在运行，此方法会发出警告并直接返回。
-            (If monitor is already running, this method will issue a warning and return.)
+            df (pd.DataFrame): 数据
+            
+        Returns:
+            str: 图表保存路径
         """
+        try:
+            fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+            fig.suptitle(f'个股资金流向分析报告 ({self.market_type.value}市场)', fontsize=16)
+            
+            # 1. 主力净流入TOP15柱状图
+            top_stocks = self.analyzer.get_top_inflow_stocks(df, 15)
+            if not top_stocks.empty:
+                ax1 = axes[0, 0]
+                colors = ['red' if x > 0 else 'green' for x in top_stocks['主力净流入']]
+                ax1.bar(range(len(top_stocks)), top_stocks['主力净流入'], color=colors)
+                ax1.set_xticks(range(len(top_stocks)))
+                ax1.set_xticklabels(top_stocks['股票名称'], rotation=45, ha='right')
+                ax1.set_title('主力净流入TOP15')
+                ax1.set_ylabel('净流入金额(万元)')
+                ax1.grid(True, alpha=0.3)
+            
+            # 2. 涨跌幅与资金流入散点图
+            if not df.empty and '涨跌幅' in df.columns and '主力净流入' in df.columns:
+                ax2 = axes[0, 1]
+                scatter = ax2.scatter(df['涨跌幅'],
+                                     df['主力净流入'],
+                                     c=df['主力净流入'],
+                                     cmap='RdYlGn',
+                                     alpha=0.6,
+                                     s=30)
+                ax2.set_xlabel('涨跌幅(%)')
+                ax2.set_ylabel('主力净流入(万元)')
+                ax2.set_title('涨跌幅与主力净流入关系')
+                ax2.grid(True, alpha=0.3)
+                plt.colorbar(scatter, ax=ax2)
+            
+            # 3. 资金流入占比分布
+            if not df.empty and '主力净流入占比' in df.columns:
+                ax3 = axes[1, 0]
+                valid_data = df['主力净流入占比'].dropna()
+                if not valid_data.empty:
+                    ax3.hist(valid_data, bins=30, alpha=0.7, color='blue', edgecolor='black')
+                    ax3.set_xlabel('主力净流入占比(%)')
+                    ax3.set_ylabel('股票数量')
+                    ax3.set_title('主力净流入占比分布')
+                    ax3.grid(True, alpha=0.3)
+            
+            # 4. 市场情绪指标
+            ax4 = axes[1, 1]
+            sentiment = self.analyzer.calculate_market_sentiment(df)
+            if sentiment:
+                labels = ['流入股票', '流出股票']
+                sizes = [sentiment['主力净流入股票数'], sentiment['主力净流出股票数']]
+                colors = ['red', 'green']
+                ax4.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90)
+                ax4.set_title('资金流向分布')
+            
+            plt.tight_layout()
+            
+            # 保存图表
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            chart_path = os.path.join(self.scraper.output_dir, f'analysis_chart_{timestamp}.png')
+            plt.savefig(chart_path, dpi=300, bbox_inches='tight')
+            plt.close()
+            
+            logger.info(f"分析图表已保存到: {chart_path}")
+            return chart_path
+            
+        except Exception as e:
+            logger.error(f"生成分析图表时发生错误: {e}")
+            return ""
+    
+    def start(self, interval: int = 10) -> None:
+        """启动个股资金流向监控器"""
         if self.is_running:
             logger.warning("个股资金流向监控器已在运行中，无法重复启动")
             return
@@ -774,35 +1042,23 @@ class StockCapitalFlowMonitor:
         self.is_running = True
         
         # 创建并启动监控线程
-        # (Create and start monitoring thread)
         self.thread = threading.Thread(
             target=self._run,
             name="StockCapitalFlowMonitorThread",
-            daemon=True  # 设置为守护线程，主程序退出时自动结束
+            daemon=True
         )
         self.thread.start()
         
         logger.info(f"个股资金流向监控器已启动，数据更新间隔: {interval}秒")
         
     def stop(self) -> None:
-        """
-        停止个股资金流向监控器。
-        (Stop the individual stock capital flow monitor.)
-        
-        此方法会安全地停止监控线程，等待当前操作完成后再退出。
-        (This method safely stops the monitoring thread, waiting for current
-        operations to complete before exiting.)
-        """
+        """停止个股资金流向监控器"""
         if not self.is_running:
             logger.info("个股资金流向监控器未在运行")
             return
             
-        # 设置停止标志
-        # (Set stop flag)
         self.is_running = False
         
-        # 等待线程结束
-        # (Wait for thread to finish)
         if self.thread and self.thread.is_alive():
             self.thread.join(timeout=5)
             if self.thread.is_alive():
@@ -814,41 +1070,30 @@ class StockCapitalFlowMonitor:
         logger.info("个股资金流向监控器已停止")
         
     def _run(self) -> None:
-        """
-        监控器主循环（内部方法）。
-        (Monitor main loop - internal method.)
-        
-        此方法在独立线程中运行，负责定时获取数据、调用回调函数和处理异常。
-        (This method runs in a separate thread, responsible for periodic data fetching,
-        callback invocation, and exception handling.)
-        """
+        """监控器主循环（内部方法）"""
         logger.info("个股资金流向监控循环已开始")
         
         while self.is_running:
             try:
                 # 获取个股资金流向数据
-                # (Fetch individual stock capital flow data)
-                df = self.scraper.scrape_once(save_to_file=True)
+                df, filepath = self.scraper.run_once(max_pages=10, save_format='csv')
                 
-                if df is not None and not df.empty:
+                if not df.empty:
                     # 更新最新数据
-                    # (Update latest data)
                     self.last_data = df
                     
                     # 调用回调函数
-                    # (Call callback function)
                     if self.callback:
                         try:
                             self.callback(df)
                         except Exception as e:
                             logger.error(f"回调函数执行出错: {e}")
                     
-                    logger.debug(f"成功获取 {len(df)} 只股票的资金流向数据")
+                    logger.debug(f"成功获取 {len(df)} 只股票的资金流向数据，保存到: {filepath}")
                 else:
                     logger.warning("获取到的个股资金流向数据为空")
                         
                 # 等待下次更新
-                # (Wait for next update)
                 time.sleep(self.interval)
                 
             except KeyboardInterrupt:
@@ -856,11 +1101,71 @@ class StockCapitalFlowMonitor:
                 break
             except Exception as e:
                 logger.error(f"监控过程发生异常: {e}", exc_info=True)
-                # 发生异常后等待一段时间再继续，避免频繁出错
-                # (Wait after exception before continuing to avoid frequent errors)
                 time.sleep(min(self.interval, 30))
         
         logger.info("个股资金流向监控循环已结束")
+    
+    def start_monitoring(self,
+                        scrape_interval: int = 60,
+                        display_interval: int = 30,
+                        max_pages: int = 10,
+                        save_format: str = 'csv'):
+        """
+        开始监控
+        
+        Args:
+            scrape_interval (int): 数据爬取间隔(秒)
+            display_interval (int): 显示更新间隔(秒)
+            max_pages (int): 每次爬取的最大页数
+            save_format (str): 保存格式
+        """
+        self.is_monitoring = True
+        last_display_time = time.time()
+        last_chart_time = time.time()
+        
+        print(f"开始监控{self.market_type.value}市场个股资金流向...")
+        print(f"数据爬取间隔: {scrape_interval}秒")
+        print(f"显示刷新间隔: {display_interval}秒")
+        print(f"数据保存格式: {save_format}")
+        print("按 Ctrl+C 停止监控\n")
+        
+        while self.is_monitoring:
+            try:
+                # 爬取数据
+                df, filepath = self.scraper.run_once(max_pages=max_pages, save_format=save_format)
+                
+                if not df.empty:
+                    logger.info(f"成功爬取数据，共 {len(df)} 条记录，保存到: {filepath}")
+                
+                # 更新显示
+                current_time = time.time()
+                if current_time - last_display_time >= display_interval:
+                    self.display_realtime_data()
+                    last_display_time = current_time
+                
+                # 每小时生成一次分析图表
+                if current_time - last_chart_time >= 3600:  # 3600秒 = 1小时
+                    if not df.empty:
+                        chart_path = self.generate_analysis_charts(df)
+                        if chart_path:
+                            logger.info(f"已生成分析图表: {chart_path}")
+                    last_chart_time = current_time
+                
+                time.sleep(scrape_interval)
+                
+            except KeyboardInterrupt:
+                print("\n停止监控...")
+                self.stop_monitoring()
+                break
+            except Exception as e:
+                logger.error(f"监控过程中发生错误: {e}")
+                time.sleep(scrape_interval)
+    
+    def stop_monitoring(self):
+        """停止监控"""
+        self.is_monitoring = False
+        self.scraper.stop()
+        logger.info("个股资金流向监控已停止")
 
 
 # ==================== 数据分析与筛选工具函数 (Data Analysis and Filtering Utility Functions) ====================
