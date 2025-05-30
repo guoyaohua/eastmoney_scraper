@@ -20,7 +20,7 @@ from typing import Optional
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # 导入eastmoney_scraper的监控器类
-from eastmoney_scraper import ConceptSectorMonitor, StockCapitalFlowMonitor
+from eastmoney_scraper import SectorMonitor, ConceptSectorMonitor, IndustrySectorMonitor, StockCapitalFlowMonitor
 import pandas as pd
 
 
@@ -449,6 +449,169 @@ def example_3_dual_monitor_coordination():
         print(f"✅ 所有监控器已停止")
 
 
+def example_4_industry_sector_monitor():
+    """
+    示例4：行业板块实时监控
+    Example 4: Real-time industry sector monitoring
+    """
+    print("\n" + "="*80)
+    print("📊 示例4：行业板块实时监控")
+    print("📋 功能：监控行业板块的行情和资金流向变化")
+    print("🎯 特点：使用IndustrySectorMonitor专门监控行业板块")
+    print("="*80 + "\n")
+    
+    # 创建行业板块监控器
+    monitor = IndustrySectorMonitor(output_dir="monitor_data/industry_sectors")
+    
+    def industry_data_callback(df_sectors: pd.DataFrame):
+        """行业板块数据更新回调"""
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        print(f"\n🔄 [{current_time}] 行业板块数据更新")
+        print("─" * 80)
+        
+        # 基础统计
+        rising_sectors = df_sectors[df_sectors['涨跌幅'] > 0]
+        falling_sectors = df_sectors[df_sectors['涨跌幅'] < 0]
+        
+        print(f"📈 市场概况：总行业 {len(df_sectors)} 个 | "
+              f"上涨 {len(rising_sectors)} 个 | 下跌 {len(falling_sectors)} 个")
+        
+        # 显示涨幅前5行业
+        print(f"\n🚀 涨幅前5行业：")
+        top_5_rising = df_sectors.nlargest(5, '涨跌幅')
+        for idx, (_, sector) in enumerate(top_5_rising.iterrows(), 1):
+            inflow_status = "💰" if sector.get('主力净流入', 0) > 0 else "💸"
+            print(f"   {idx}. {sector['板块名称']:12} {sector['涨跌幅']:+6.2f}% "
+                  f"{inflow_status} {sector.get('主力净流入', 0):>8.0f}万 "
+                  f"成交额: {sector.get('成交额', 0):>10.0f}万")
+        
+        # 显示跌幅前3行业
+        print(f"\n📉 跌幅前3行业：")
+        top_3_falling = df_sectors.nsmallest(3, '涨跌幅')
+        for idx, (_, sector) in enumerate(top_3_falling.iterrows(), 1):
+            inflow_status = "💰" if sector.get('主力净流入', 0) > 0 else "💸"
+            print(f"   {idx}. {sector['板块名称']:12} {sector['涨跌幅']:+6.2f}% "
+                  f"{inflow_status} {sector.get('主力净流入', 0):>8.0f}万")
+        
+        # 主力资金流向分析
+        if '主力净流入' in df_sectors.columns:
+            inflow_sectors = df_sectors[df_sectors['主力净流入'] > 0]
+            outflow_sectors = df_sectors[df_sectors['主力净流入'] < 0]
+            
+            print(f"\n💰 主力资金流向：")
+            print(f"   • 净流入行业：{len(inflow_sectors)} 个")
+            print(f"   • 净流出行业：{len(outflow_sectors)} 个")
+            
+            # 显示资金流入前3的行业
+            if not inflow_sectors.empty:
+                print(f"\n💎 主力净流入前3行业：")
+                top_inflow = inflow_sectors.nlargest(3, '主力净流入')
+                for idx, (_, sector) in enumerate(top_inflow.iterrows(), 1):
+                    print(f"   {idx}. {sector['板块名称']:12} "
+                          f"净流入: {sector['主力净流入']:>10.0f}万 "
+                          f"涨幅: {sector['涨跌幅']:+6.2f}%")
+    
+    # 设置回调
+    monitor.set_callback(industry_data_callback)
+    
+    print("🚀 启动行业板块监控器...")
+    print("📊 数据更新间隔：30秒")
+    print("⚡ 按 Ctrl+C 停止监控\n")
+    
+    try:
+        # 启动监控
+        monitor.start(interval=30)
+        
+        print("🔄 行业板块监控器运行中...")
+        
+        # 保持运行直到用户中断
+        while True:
+            time.sleep(1)
+            
+    except KeyboardInterrupt:
+        print(f"\n\n⚠️ 用户中断，正在停止监控器...")
+    finally:
+        monitor.stop()
+        print(f"✅ 行业板块监控器已停止")
+
+
+def example_5_base_sector_monitor():
+    """
+    示例5：使用基类SectorMonitor灵活监控
+    Example 5: Flexible monitoring using base class SectorMonitor
+    """
+    print("\n" + "="*80)
+    print("📊 示例5：使用基类SectorMonitor灵活监控")
+    print("📋 功能：可选择监控概念板块或行业板块")
+    print("🎯 特点：展示SectorMonitor基类的使用方式")
+    print("="*80 + "\n")
+    
+    # 让用户选择板块类型
+    print("请选择要监控的板块类型：")
+    print("1. 概念板块")
+    print("2. 行业板块")
+    
+    choice = input("请输入选择 (1/2): ").strip()
+    
+    if choice == '1':
+        sector_type = "concept"
+        sector_name = "概念板块"
+    elif choice == '2':
+        sector_type = "industry"
+        sector_name = "行业板块"
+    else:
+        print("无效选择，默认使用概念板块")
+        sector_type = "concept"
+        sector_name = "概念板块"
+    
+    # 使用基类SectorMonitor创建监控器
+    monitor = SectorMonitor(
+        sector_type=sector_type,
+        output_dir=f"monitor_data/{sector_type}_sectors"
+    )
+    
+    def sector_data_callback(df_sectors: pd.DataFrame):
+        """板块数据更新回调"""
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        print(f"\n🔄 [{current_time}] {sector_name}数据更新")
+        print("─" * 80)
+        
+        # 显示前5个板块
+        print(f"\n📊 {sector_name}列表（前5个）：")
+        for idx, (_, sector) in enumerate(df_sectors.head().iterrows(), 1):
+            change_icon = "📈" if sector['涨跌幅'] > 0 else "📉"
+            print(f"   {idx}. {sector['板块名称']:12} "
+                  f"{change_icon} {sector['涨跌幅']:+6.2f}% "
+                  f"最新价: {sector.get('最新价', 0):>8.2f}")
+        
+        print(f"\n共监控到 {len(df_sectors)} 个{sector_name}")
+    
+    # 设置回调
+    monitor.set_callback(sector_data_callback)
+    
+    print(f"\n🚀 启动{sector_name}监控器...")
+    print("📊 数据更新间隔：20秒")
+    print("⚡ 按 Ctrl+C 停止监控\n")
+    
+    try:
+        # 启动监控
+        monitor.start(interval=20)
+        
+        print(f"🔄 {sector_name}监控器运行中...")
+        
+        # 保持运行直到用户中断
+        while True:
+            time.sleep(1)
+            
+    except KeyboardInterrupt:
+        print(f"\n\n⚠️ 用户中断，正在停止监控器...")
+    finally:
+        monitor.stop()
+        print(f"✅ {sector_name}监控器已停止")
+
+
 def main():
     """
     主函数：监控示例选择器
@@ -459,9 +622,11 @@ def main():
     print("=" * 100)
     
     monitor_options = {
-        '1': ('概念板块智能监控', example_1_intelligent_concept_monitor),
+        '1': ('概念板块智能监控（ConceptSectorMonitor）', example_1_intelligent_concept_monitor),
         '2': ('个股资金流智能监控', example_2_intelligent_stock_monitor),
         '3': ('双监控器协同运行', example_3_dual_monitor_coordination),
+        '4': ('行业板块实时监控（IndustrySectorMonitor）', example_4_industry_sector_monitor),
+        '5': ('灵活板块监控（SectorMonitor基类）', example_5_base_sector_monitor),
     }
     
     print("📋 可用的监控示例：")
@@ -470,7 +635,7 @@ def main():
     print("   0. 退出")
     
     while True:
-        choice = input(f"\n请选择要运行的监控示例 (1-3/0): ").strip()
+        choice = input(f"\n请选择要运行的监控示例 (1-5/0): ").strip()
         
         if choice == '0':
             print("👋 退出监控示例程序")

@@ -60,7 +60,9 @@ from .api import (
     get_market_overview,          # 获取市场概况统计
     
     # 实时监控器类
+    SectorMonitor,                # 板块实时数据监控器基类（支持概念和行业板块）
     ConceptSectorMonitor,         # 概念板块实时数据监控器
+    IndustrySectorMonitor,        # 行业板块实时数据监控器
     StockCapitalFlowMonitor,      # 个股资金流向实时数据监控器
     StockCapitalFlowAnalyzer,     # 个股资金流向数据分析器
     StockKlineMonitor,            # 个股K线数据监控器
@@ -89,7 +91,9 @@ __all__ = [
     "StockMarket",                  # 股票市场类型枚举
     
     # 实时监控器类和分析器类
+    "SectorMonitor",                # 板块实时数据监控器基类（支持概念和行业板块）
     "ConceptSectorMonitor",         # 概念板块实时数据监控器类
+    "IndustrySectorMonitor",        # 行业板块实时数据监控器类
     "StockCapitalFlowMonitor",      # 个股资金流向实时数据监控器类
     "StockCapitalFlowAnalyzer",     # 个股资金流向数据分析器类
     "StockKlineMonitor",            # 个股K线数据监控器类

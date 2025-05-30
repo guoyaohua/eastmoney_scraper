@@ -237,12 +237,45 @@ for _, row in flow_history.iterrows():
     print(f"{row['日期']}: 主力净流入 {row['主力净流入']:.2f}万元")
 ```
 
-### 5️⃣ 实时监控与分析（增强功能）
+### 5️⃣ 板块实时监控（v1.7.0新架构）
+
+```python
+from eastmoney_scraper import SectorMonitor, ConceptSectorMonitor, IndustrySectorMonitor
+
+# 🆕 使用基类SectorMonitor灵活监控（支持概念/行业板块）
+monitor = SectorMonitor(sector_type="concept")  # 或 "industry"
+
+# 🆕 使用专门的概念板块监控器
+concept_monitor = ConceptSectorMonitor()
+
+# 🆕 使用专门的行业板块监控器
+industry_monitor = IndustrySectorMonitor()
+
+# 设置数据更新回调
+def on_sector_update(df):
+    print(f"板块数据更新：{len(df)} 个板块")
+    # 显示涨幅前5的板块
+    top5 = df.nlargest(5, '涨跌幅')
+    for _, sector in top5.iterrows():
+        print(f"{sector['板块名称']}: {sector['涨跌幅']:+.2f}%")
+
+# 启动监控
+monitor.set_callback(on_sector_update)
+monitor.start(interval=30)  # 每30秒更新一次
+
+# 获取最新数据
+latest_data = monitor.get_latest_data()
+
+# 记得停止监控
+monitor.stop()
+```
+
+### 6️⃣ 个股资金流向监控与分析
 
 ```python
 from eastmoney_scraper import StockCapitalFlowMonitor, StockCapitalFlowAnalyzer, MarketType
 
-# 🆕 创建增强的监控器
+# 创建增强的监控器
 monitor = StockCapitalFlowMonitor(market_type=MarketType.ALL)
 
 # 🆕 创建数据分析器
@@ -381,8 +414,8 @@ eastmoney-scraper/
 
 #### 板块数据接口
 
-| 函数 | 说明 | 主要参数 |
-|------|------|----------|
+| 函数/类 | 说明 | 主要参数 |
+|---------|------|----------|
 | `get_concept_sectors()` | 获取完整概念板块数据 | `include_capital_flow`, `periods`, `save_to_file` |
 | `get_concept_sectors_realtime()` | 仅获取实时行情 | 无 |
 | `get_industry_sectors()` | 🆕 获取行业板块数据 | `include_capital_flow`, `save_to_file` |
@@ -393,6 +426,14 @@ eastmoney-scraper/
 | `get_sector_capital_flow_realtime()` | 🆕 获取板块实时资金流向 | `sector_code` |
 | `get_sector_capital_flow_history()` | 🆕 获取板块资金流向历史 | `sector_code`, `days` |
 | `compare_sectors()` | 🆕 板块对比分析 | `sector_codes`, `metrics` |
+
+#### 板块监控接口（v1.7.0新架构）
+
+| 类 | 说明 | 主要参数 |
+|----|------|----------|
+| `SectorMonitor` | 🆕 板块监控器基类（支持概念/行业） | `sector_type`, `output_dir` |
+| `ConceptSectorMonitor` | 概念板块专用监控器 | `output_dir` |
+| `IndustrySectorMonitor` | 🆕 行业板块专用监控器 | `output_dir` |
 
 #### 数据分析工具
 

@@ -15,7 +15,7 @@
 """
 
 # 版本号 - 保持与setup.py一致
-__version__ = "1.6.0"
+__version__ = "1.7.0"
 
 # 作者信息
 __author__ = "Yaohua Guo"
@@ -41,6 +41,15 @@ __keywords__ = [
 
 # 更新日志
 __changelog__ = {
+    "1.7.0": [
+        "重构板块监控器架构：引入SectorMonitor作为基类",
+        "SectorMonitor基类：支持概念板块和行业板块的通用监控功能",
+        "ConceptSectorMonitor：继承自SectorMonitor，专门用于概念板块监控",
+        "IndustrySectorMonitor：继承自SectorMonitor，专门用于行业板块监控",
+        "向后兼容：保持原有ConceptSectorMonitor使用方式不变",
+        "改进日志输出：根据板块类型显示对应的提示信息",
+        "更新文档和示例：添加新的监控器使用示例"
+    ],
     "1.6.0": [
         "新增功能：全部股票代码和基本信息获取模块",
         "市场覆盖：支持沪市主板、深市主板、创业板、科创板、北交所",

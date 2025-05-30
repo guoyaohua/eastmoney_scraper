@@ -485,38 +485,60 @@ def get_stock_to_sector_mapping(
 
 # ==================== 实时监控器类 (Real-time Monitor Classes) ====================
 
-class ConceptSectorMonitor:
+class SectorMonitor:
     """
-    概念板块实时数据监控器。
-    (Real-time concept sector data monitor.)
+    板块实时数据监控器基类（支持概念板块和行业板块）。
+    (Base class for real-time sector data monitor - supports both concept and industry sectors.)
     
-    此监控器能够定时获取概念板块数据，支持自定义回调函数来处理更新的数据。
-    适用于需要实时跟踪概念板块表现、资金流向变化的应用场景。
+    此监控器能够定时获取板块数据，支持自定义回调函数来处理更新的数据。
+    适用于需要实时跟踪板块表现、资金流向变化的应用场景。
     
-    (This monitor can periodically fetch concept sector data and supports custom
+    (This monitor can periodically fetch sector data and supports custom
     callback functions to process updated data. Suitable for applications that need
-    real-time tracking of concept sector performance and capital flow changes.)
+    real-time tracking of sector performance and capital flow changes.)
     
     主要功能 (Main Features):
-    - 定时自动获取概念板块数据 (Automatic periodic fetching of concept sector data)
+    - 支持概念板块和行业板块监控 (Support for both concept and industry sector monitoring)
+    - 定时自动获取板块数据 (Automatic periodic fetching of sector data)
     - 支持自定义数据更新回调 (Support for custom data update callbacks)
     - 线程安全的启停控制 (Thread-safe start/stop control)
     - 异常处理和错误恢复 (Exception handling and error recovery)
     - 数据自动保存功能 (Automatic data saving functionality)
     """
     
-    def __init__(self, output_dir: str = "output/concept_sector_data"):
+    def __init__(self,
+                 sector_type: Union[str, SectorType],
+                 output_dir: str = None):
         """
-        初始化概念板块监控器。
-        (Initialize concept sector monitor.)
+        初始化板块监控器。
+        (Initialize sector monitor.)
         
         Args:
-            output_dir (str): 数据文件输出目录。默认为 "concept_sector_data"。
-                (Output directory for data files. Default is "concept_sector_data".)
+            sector_type (Union[str, SectorType]): 板块类型，可选值：
+                - "concept" 或 SectorType.CONCEPT: 概念板块
+                - "industry" 或 SectorType.INDUSTRY: 行业板块
+            output_dir (str): 数据文件输出目录。如果为None，将根据板块类型自动设置。
+                (Output directory for data files. If None, will be set automatically based on sector type.)
         """
-        # 创建概念板块爬虫实例
-        # (Create concept sector scraper instance)
-        self.scraper = SectorScraper(sector_type=SectorType.CONCEPT, output_dir=output_dir)
+        # 处理板块类型参数
+        if isinstance(sector_type, str):
+            sector_type_map = {
+                "concept": SectorType.CONCEPT,
+                "industry": SectorType.INDUSTRY
+            }
+            if sector_type not in sector_type_map:
+                raise ValueError(f"无效的板块类型: {sector_type}。有效值为: {list(sector_type_map.keys())}")
+            sector_type = sector_type_map[sector_type]
+        
+        self.sector_type = sector_type
+        
+        # 如果未指定输出目录，根据板块类型自动设置
+        if output_dir is None:
+            output_dir = f"output/{sector_type.name.lower()}_sector_data"
+        
+        # 创建板块爬虫实例
+        # (Create sector scraper instance)
+        self.scraper = SectorScraper(sector_type=sector_type, output_dir=output_dir)
         
         # 监控状态控制
         # (Monitor status control)
@@ -529,7 +551,7 @@ class ConceptSectorMonitor:
         self.interval = 10
         self.last_data: Optional[pd.DataFrame] = None
         
-        logger.debug(f"概念板块监控器已初始化，输出目录: {output_dir}")
+        logger.debug(f"{sector_type.value}板块监控器已初始化，输出目录: {output_dir}")
         
     def set_callback(self, callback: Callable[[pd.DataFrame], None]) -> None:
         """
@@ -550,7 +572,12 @@ class ConceptSectorMonitor:
             >>>     top_gainer = df.iloc[0]
             >>>     print(f"领涨板块: {top_gainer['板块名称']}")
             >>>
-            >>> monitor = ConceptSectorMonitor()
+            >>> # 监控概念板块
+            >>> monitor = SectorMonitor(sector_type="concept")
+            >>> monitor.set_callback(my_callback)
+            >>>
+            >>> # 监控行业板块
+            >>> monitor = SectorMonitor(sector_type="industry")
             >>> monitor.set_callback(my_callback)
         """
         self.callback = callback
@@ -558,19 +585,19 @@ class ConceptSectorMonitor:
         
     def get_latest_data(self) -> Optional[pd.DataFrame]:
         """
-        获取最新的概念板块数据。
-        (Get the latest concept sector data.)
+        获取最新的板块数据。
+        (Get the latest sector data.)
         
         Returns:
-            Optional[pd.DataFrame]: 最新的概念板块数据，如果还没有数据则返回None。
-                (Latest concept sector data, returns None if no data available yet.)
+            Optional[pd.DataFrame]: 最新的板块数据，如果还没有数据则返回None。
+                (Latest sector data, returns None if no data available yet.)
         """
         return self.last_data
         
     def start(self, interval: int = 10) -> None:
         """
-        启动概念板块监控器。
-        (Start the concept sector monitor.)
+        启动板块监控器。
+        (Start the sector monitor.)
         
         Args:
             interval (int): 数据更新间隔（秒）。默认为 10秒。
@@ -581,7 +608,7 @@ class ConceptSectorMonitor:
             (If monitor is already running, this method will issue a warning and return.)
         """
         if self.is_running:
-            logger.warning("概念板块监控器已在运行中，无法重复启动")
+            logger.warning(f"{self.sector_type.value}板块监控器已在运行中，无法重复启动")
             return
             
         self.interval = interval
@@ -591,24 +618,24 @@ class ConceptSectorMonitor:
         # (Create and start monitoring thread)
         self.thread = threading.Thread(
             target=self._run,
-            name="ConceptSectorMonitorThread",
+            name=f"{self.sector_type.name}SectorMonitorThread",
             daemon=True  # 设置为守护线程，主程序退出时自动结束
         )
         self.thread.start()
         
-        logger.info(f"概念板块监控器已启动，数据更新间隔: {interval}秒")
+        logger.info(f"{self.sector_type.value}板块监控器已启动，数据更新间隔: {interval}秒")
         
     def stop(self) -> None:
         """
-        停止概念板块监控器。
-        (Stop the concept sector monitor.)
+        停止板块监控器。
+        (Stop the sector monitor.)
         
         此方法会安全地停止监控线程，等待当前操作完成后再退出。
         (This method safely stops the monitoring thread, waiting for current
         operations to complete before exiting.)
         """
         if not self.is_running:
-            logger.info("概念板块监控器未在运行")
+            logger.info(f"{self.sector_type.value}板块监控器未在运行")
             return
             
         # 设置停止标志
@@ -625,7 +652,7 @@ class ConceptSectorMonitor:
                 logger.info("监控线程已正常结束")
         
         self.thread = None
-        logger.info("概念板块监控器已停止")
+        logger.info(f"{self.sector_type.value}板块监控器已停止")
         
     def _run(self) -> None:
         """
@@ -636,12 +663,12 @@ class ConceptSectorMonitor:
         (This method runs in a separate thread, responsible for periodic data fetching,
         callback invocation, and exception handling.)
         """
-        logger.info("概念板块监控循环已开始")
+        logger.info(f"{self.sector_type.value}板块监控循环已开始")
         
         while self.is_running:
             try:
-                # 获取概念板块数据
-                # (Fetch concept sector data)
+                # 获取板块数据
+                # (Fetch sector data)
                 df = self.scraper.scrape_all_data()
                 
                 if not df.empty:
@@ -657,7 +684,7 @@ class ConceptSectorMonitor:
                         except Exception as e:
                             logger.error(f"回调函数执行出错: {e}")
                 else:
-                    logger.warning("获取到的概念板块数据为空")
+                    logger.warning(f"获取到的{self.sector_type.value}板块数据为空")
                     
                 # 等待下次更新
                 # (Wait for next update)
@@ -672,7 +699,45 @@ class ConceptSectorMonitor:
                 # (Wait after exception before continuing to avoid frequent errors)
                 time.sleep(min(self.interval, 30))
         
-        logger.info("概念板块监控循环已结束")
+        logger.info(f"{self.sector_type.value}板块监控循环已结束")
+
+
+class ConceptSectorMonitor(SectorMonitor):
+    """
+    概念板块实时数据监控器。
+    (Real-time concept sector data monitor.)
+    
+    这是SectorMonitor的便捷子类，默认监控概念板块。
+    (This is a convenience subclass of SectorMonitor that defaults to monitoring concept sectors.)
+    """
+    
+    def __init__(self, output_dir: str = None):
+        """
+        初始化概念板块监控器。
+        
+        Args:
+            output_dir (str): 数据文件输出目录。如果为None，默认为"output/concept_sector_data"。
+        """
+        super().__init__(sector_type=SectorType.CONCEPT, output_dir=output_dir)
+
+
+class IndustrySectorMonitor(SectorMonitor):
+    """
+    行业板块实时数据监控器。
+    (Real-time industry sector data monitor.)
+    
+    这是SectorMonitor的便捷子类，默认监控行业板块。
+    (This is a convenience subclass of SectorMonitor that defaults to monitoring industry sectors.)
+    """
+    
+    def __init__(self, output_dir: str = None):
+        """
+        初始化行业板块监控器。
+        
+        Args:
+            output_dir (str): 数据文件输出目录。如果为None，默认为"output/industry_sector_data"。
+        """
+        super().__init__(sector_type=SectorType.INDUSTRY, output_dir=output_dir)
 
 
 class StockCapitalFlowAnalyzer:
@@ -1078,7 +1143,7 @@ class StockCapitalFlowMonitor:
         while self.is_running:
             try:
                 # 获取个股资金流向数据
-                df, filepath = self.scraper.run_once(max_pages=10, save_format='csv')
+                df, filepath = self.scraper.run_once(max_pages=10, save_format=None)
                 
                 if not df.empty:
                     # 更新最新数据
