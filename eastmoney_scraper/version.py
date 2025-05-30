@@ -5,6 +5,8 @@
 这些信息被setup.py和__init__.py等模块引用，确保版本信息的一致性。
 
 版本更新历史:
+- v1.6.0: 新增全部股票代码获取功能，支持多市场筛选，完善数据分析工具
+- v1.5.0: 新增K线历史数据爬虫，支持多周期多复权类型，完善技术分析功能
 - v1.4.0: 包结构重构，统一输出目录，整合监控功能，精简核心模块
 - v1.3.0: 重构核心模块，去英文化，优化API命名，提升代码可读性
 - v1.2.0: 优化代码结构，完善中文注释，增强API功能
@@ -13,14 +15,14 @@
 """
 
 # 版本号 - 保持与setup.py一致
-__version__ = "1.4.0"
+__version__ = "1.6.0"
 
 # 作者信息
 __author__ = "Yaohua Guo"
 __email__ = "guo.yaohua@foxmail.com"
 
 # 包描述信息
-__description__ = "东方财富数据爬虫包 - 提供概念板块和个股资金流向数据爬取与监控功能"
+__description__ = "东方财富数据爬虫包 - 提供概念板块、个股资金流向、K线历史数据和股票列表的爬取与监控功能"
 
 # 项目链接
 __url__ = "https://github.com/guoyaohua/eastmoney-scraper"
@@ -29,16 +31,39 @@ __license__ = "MIT"
 # 包的关键字
 __keywords__ = [
     # 中文关键词
-    "东方财富", "数据爬虫", "股票", "资金流向", "概念板块",
-    "实时监控", "投资分析", "金融数据", "量化交易",
+    "东方财富", "数据爬虫", "股票", "资金流向", "概念板块", "K线数据", "股票列表",
+    "实时监控", "投资分析", "金融数据", "量化交易", "技术分析", "历史数据", "市场数据",
     
     # 英文关键词
-    "eastmoney", "scraper", "stocks", "capital-flow", "concept-sector",
-    "real-time", "monitoring", "investment", "analysis", "financial-data", "quantitative"
+    "eastmoney", "scraper", "stocks", "capital-flow", "concept-sector", "kline", "candlestick", "stock-list",
+    "real-time", "monitoring", "investment", "analysis", "financial-data", "quantitative", "technical-analysis", "market-data"
 ]
 
 # 更新日志
 __changelog__ = {
+    "1.6.0": [
+        "新增功能：全部股票代码和基本信息获取模块",
+        "市场覆盖：支持沪市主板、深市主板、创业板、科创板、北交所",
+        "智能缓存：支持数据缓存机制，提升获取效率",
+        "数据筛选：支持按市场类型、市值等条件筛选股票",
+        "搜索功能：支持按股票名称、代码等关键词搜索",
+        "市场统计：提供完整的市场概况和统计分析功能",
+        "API扩展：新增get_all_stock_codes、search_stocks等接口",
+        "数据分析：新增filter_stocks_by_market_cap等分析工具",
+        "完善测试：新增股票列表功能的完整测试用例",
+        "使用示例：提供详细的股票列表使用示例和演示代码"
+    ],
+    "1.5.0": [
+        "新增功能：完整的个股K线历史数据爬虫模块",
+        "支持多周期：日K、周K、月K、1/5/15/30/60分钟K线",
+        "复权支持：前复权、后复权、不复权三种类型",
+        "高性能：支持并行获取多只股票数据",
+        "技术分析：内置移动平均线、价格统计等技术指标计算",
+        "监控器：新增StockKlineMonitor实时K线数据监控",
+        "API扩展：新增get_stock_kline等便捷接口函数",
+        "完善测试：新增comprehensive K线数据测试用例",
+        "使用示例：提供详细的K线数据使用示例代码"
+    ],
     "1.4.0": [
         "重大重构：精简包结构，删除冗余模块",
         "统一输出目录：所有数据保存到output文件夹",
